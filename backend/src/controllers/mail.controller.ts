@@ -26,7 +26,9 @@ export class MailController {
     sendEmail = async (req: Request, res: Response): Promise<void> => {
         try {
             const { to, from, subject, content, googleAccessToken } = req.body;
-            const userId = (req as any).user?.id || "mock-user-id";
+            const user = (req as any).user;
+            const userId = user?.id || "mock-user-id";
+            const refreshToken = user?.refreshToken;
 
             console.log(`Controller: sendEmail request from=${from} to=${to} hasToken=${!!googleAccessToken}`);
 
@@ -37,7 +39,8 @@ export class MailController {
 
             const sentMail = await this.mailService.sendEmail(
                 { userId, to, from, subject, content, status: "PENDING" },
-                googleAccessToken
+                googleAccessToken,
+                refreshToken
             );
             res.status(HTTP_STATUS.CREATED).json({ success: true, message: MESSAGES.MAIL_SENT, data: sentMail });
         } catch (error: any) {

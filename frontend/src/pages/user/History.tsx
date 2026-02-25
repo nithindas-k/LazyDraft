@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { History, Inbox } from "lucide-react";
+import { Inbox } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 const HistoryPage: React.FC = () => (

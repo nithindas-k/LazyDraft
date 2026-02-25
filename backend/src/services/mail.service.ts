@@ -17,13 +17,13 @@ export class MailService implements IMailService {
         return await this.aiService.parseUnstructuredText(text, fromEmail);
     }
 
-    async sendEmail(mailData: Omit<IMailEntity, "status">, googleAccessToken?: string): Promise<IMailEntity> {
+    async sendEmail(mailData: Omit<IMailEntity, "status">, googleAccessToken?: string, refreshToken?: string): Promise<IMailEntity> {
         if (!mailData.to || !mailData.subject || !mailData.content) {
             throw new Error("Incomplete email data: to, subject, and content are required");
         }
 
-        if (!googleAccessToken) {
-            throw new Error("Google access token is required. Please connect your Gmail account first.");
+        if (!googleAccessToken && !refreshToken) {
+            throw new Error("Google access token or refresh token is required. Please connect your Gmail account first.");
         }
 
         // Persist to DB as PENDING
@@ -41,6 +41,7 @@ export class MailService implements IMailService {
                 subject: mailData.subject,
                 text: mailData.content,
                 accessToken: googleAccessToken,
+                refreshToken: refreshToken,
             });
 
             if (isSent && savedMail.id) {

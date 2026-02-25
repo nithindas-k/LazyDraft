@@ -4,8 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Wand2, Send, Loader2, CheckCircle2, XCircle, ShieldCheck, Mail } from "lucide-react";
-import { useGoogleLogin } from "@react-oauth/google";
-import axios from "axios";
+import { useAuth } from "@/contexts/AuthContext";
+
 
 import { Button } from "@/components/ui/button";
 import {
@@ -369,88 +369,22 @@ function SendDialog({ open, status, errorMessage, onClose }: SendDialogProps) {
     );
 }
 
-// ─── Gmail Not Connected Banner ───────────────────────────────────────────────
-interface GmailBannerProps {
-    onConnect: () => void;
-}
-
-function GmailBanner({ onConnect }: GmailBannerProps) {
-    return (
-        <div className="flex flex-col items-center justify-center h-full min-h-[300px] gap-5 p-6 text-center">
-            {/* Google G coloured dots */}
-            <div className="relative w-16 h-16">
-                <Mail className="w-16 h-16 text-slate-200" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="flex gap-1">
-                        {[G_BLUE, G_RED, G_YELLOW, G_GREEN].map((c, i) => (
-                            <span key={i} className="block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c }} />
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <h3 className="text-base font-semibold text-slate-800 mb-1">Verify your Gmail to continue</h3>
-                <p className="text-sm text-slate-500 max-w-xs">
-                    Connect your Google account to send emails directly from your Gmail inbox.
-                </p>
-            </div>
-
-            {/* Google‑style sign‑in button */}
-            <button
-                onClick={onConnect}
-                className="flex items-center gap-3 px-5 py-2.5 bg-white border border-slate-300 rounded-lg shadow-sm hover:shadow-md transition-all text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-                {/* Google SVG logo */}
-                <svg width="18" height="18" viewBox="0 0 48 48">
-                    <path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z" />
-                    <path fill="#34A853" d="M6.3 14.7l7 5.1C15.1 16.4 19.2 14 24 14c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.3 2 9.7 7.4 6.3 14.7z" />
-                    <path fill="#FBBC05" d="M24 46c5.9 0 10.9-2 14.5-5.4l-6.7-5.5C29.9 36.6 27.1 37 24 37c-5.8 0-10.7-3.9-12.5-9.3l-6.9 5.3C8.4 41.3 15.6 46 24 46z" />
-                    <path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.9 2.6-2.7 4.8-5 6.3l6.7 5.5C41.6 36.7 45 31 45 24c0-1.3-.2-2.7-.5-4z" />
-                </svg>
-                Sign in with Google
-            </button>
-
-            <p className="text-xs text-slate-400">
-                We only request permission to <span className="font-medium text-slate-500">send emails</span> on your behalf.
-            </p>
-        </div>
-    );
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 export const MagicFillForm: React.FC = () => {
+    const { user } = useAuth();
     const [magicText, setMagicText] = useState("");
     const [isParsing, setIsParsing] = useState(false);
-    const [googleToken, setGoogleToken] = useState<string | null>(null);
-    const [connectedEmail, setConnectedEmail] = useState<string | null>(null);
 
     // Modal state
     const [dialogOpen, setDialogOpen] = useState(false);
     const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
     const [sendError, setSendError] = useState<string>("");
 
-    const login = useGoogleLogin({
-        onSuccess: async (tokenResponse) => {
-            setGoogleToken(tokenResponse.access_token);
-            try {
-                const userInfo = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
-                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-                });
-                if (userInfo.data.email) {
-                    setConnectedEmail(userInfo.data.email);
-                    form.setValue("from", userInfo.data.email);
-                }
-            } catch (error) {
-                console.error("Failed to fetch user info:", error);
-            }
-        },
-        scope: "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email",
-    });
+    const connectedEmail = user?.email || "";
 
     const form = useForm<MailFormValues>({
         resolver: zodResolver(mailSchema),
-        defaultValues: { from: "", to: "", subject: "", body: "" },
+        defaultValues: { from: connectedEmail, to: "", subject: "", body: "" },
     });
 
     const handleMagicFill = async () => {
@@ -460,7 +394,7 @@ export const MagicFillForm: React.FC = () => {
             const response = await MailService.parseMagicFill(magicText, connectedEmail);
             if (response.success && response.data) {
                 const { from, to, subject, body } = response.data;
-                if (from && !connectedEmail) form.setValue("from", from);
+                if (from && connectedEmail) form.setValue("from", connectedEmail);
                 form.setValue("to", to);
                 form.setValue("subject", subject);
                 form.setValue("body", body);
@@ -481,7 +415,6 @@ export const MagicFillForm: React.FC = () => {
                 ...values,
                 content: values.body,
                 from: values.from,
-                googleAccessToken: googleToken,
             };
             const response = await MailService.sendEmail(payload);
             if (response.success) {
@@ -557,42 +490,7 @@ export const MagicFillForm: React.FC = () => {
                             )}
                         </Button>
 
-                        {/* Gmail Connect Section */}
-                        <div className="pt-3 border-t">
-                            {connectedEmail ? (
-                                <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200">
-                                    <ShieldCheck className="w-4 h-4 shrink-0" style={{ color: G_GREEN }} />
-                                    <div className="min-w-0">
-                                        <p className="text-xs font-semibold text-green-700">Gmail Connected</p>
-                                        <p className="text-xs text-green-600 truncate">{connectedEmail}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => login()}
-                                        className="ml-auto text-xs text-slate-400 hover:text-slate-600 underline shrink-0"
-                                    >
-                                        Switch
-                                    </button>
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => login()}
-                                    className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white border border-slate-300 rounded-lg shadow-sm hover:shadow-md transition-all text-sm font-medium text-slate-700 hover:bg-slate-50"
-                                >
-                                    <svg width="18" height="18" viewBox="0 0 48 48">
-                                        <path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z" />
-                                        <path fill="#34A853" d="M6.3 14.7l7 5.1C15.1 16.4 19.2 14 24 14c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.3 2 9.7 7.4 6.3 14.7z" />
-                                        <path fill="#FBBC05" d="M24 46c5.9 0 10.9-2 14.5-5.4l-6.7-5.5C29.9 36.6 27.1 37 24 37c-5.8 0-10.7-3.9-12.5-9.3l-6.9 5.3C8.4 41.3 15.6 46 24 46z" />
-                                        <path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.9 2.6-2.7 4.8-5 6.3l6.7 5.5C41.6 36.7 45 31 45 24c0-1.3-.2-2.7-.5-4z" />
-                                    </svg>
-                                    Sign in with Google
-                                </button>
-                            )}
-                            {!connectedEmail && (
-                                <p className="text-xs text-slate-400 mt-2 text-center">
-                                    Required to send emails from your Gmail account.
-                                </p>
-                            )}
-                        </div>
+                        {/* Gmail Connect Section Removed (Handled by Global Auth) */}
                     </CardContent>
                 </Card>
 
@@ -607,98 +505,94 @@ export const MagicFillForm: React.FC = () => {
                     </CardHeader>
 
                     <CardContent>
-                        {/* If Gmail not connected → show verification banner */}
-                        {!connectedEmail ? (
-                            <GmailBanner onConnect={() => login()} />
-                        ) : (
-                            <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                    {/* From */}
-                                    <FormField
-                                        control={form.control}
-                                        name="from"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="flex items-center gap-1.5">
-                                                    From
-                                                    <span className="text-xs font-normal px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: G_GREEN }}>
-                                                        Verified
-                                                    </span>
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        {...field}
-                                                        readOnly
-                                                        className="bg-slate-50 cursor-not-allowed text-slate-600 border-slate-200"
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                        {/* Always show the exact form, Gmail is globally connected */}
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                {/* From */}
+                                <FormField
+                                    control={form.control}
+                                    name="from"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex items-center gap-1.5">
+                                                From
+                                                <span className="text-xs font-normal px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: G_GREEN }}>
+                                                    Verified
+                                                </span>
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    {...field}
+                                                    readOnly
+                                                    className="bg-slate-50 cursor-not-allowed text-slate-600 border-slate-200"
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                                    {/* To */}
-                                    <FormField
-                                        control={form.control}
-                                        name="to"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>To</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="recipient@example.com" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                {/* To */}
+                                <FormField
+                                    control={form.control}
+                                    name="to"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>To</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="recipient@example.com" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                                    {/* Subject */}
-                                    <FormField
-                                        control={form.control}
-                                        name="subject"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Subject</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="Email Subject" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                {/* Subject */}
+                                <FormField
+                                    control={form.control}
+                                    name="subject"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Subject</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Email Subject" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                                    {/* Body */}
-                                    <FormField
-                                        control={form.control}
-                                        name="body"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Body</FormLabel>
-                                                <FormControl>
-                                                    <Textarea
-                                                        placeholder="Your email content will appear here after Magic Fill…"
-                                                        className="min-h-[160px] resize-none text-sm"
-                                                        {...field}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                {/* Body */}
+                                <FormField
+                                    control={form.control}
+                                    name="body"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Body</FormLabel>
+                                            <FormControl>
+                                                <Textarea
+                                                    placeholder="Your email content will appear here after Magic Fill…"
+                                                    className="min-h-[160px] resize-none text-sm"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                                    {/* Send Button — Google Blue */}
-                                    <Button
-                                        type="submit"
-                                        className="w-full text-white font-medium"
-                                        style={{ backgroundColor: G_BLUE }}
-                                        disabled={sendStatus === "sending"}
-                                    >
-                                        <Send className="mr-2 h-4 w-4" />
-                                        Send Email
-                                    </Button>
-                                </form>
-                            </Form>
-                        )}
+                                {/* Send Button — Google Blue */}
+                                <Button
+                                    type="submit"
+                                    className="w-full text-white font-medium"
+                                    style={{ backgroundColor: G_BLUE }}
+                                    disabled={sendStatus === "sending"}
+                                >
+                                    <Send className="mr-2 h-4 w-4" />
+                                    Send Email
+                                </Button>
+                            </form>
+                        </Form>
                     </CardContent>
                 </Card>
             </div>

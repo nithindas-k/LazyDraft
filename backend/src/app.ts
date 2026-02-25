@@ -10,6 +10,10 @@ import { MongoMailRepository } from "./repositories/mail.repository";
 import { GmailVendor } from "./vendors/GmailVendor";
 
 
+import passport from "./config/passport";
+import authRoutes from "./routes/auth.routes";
+import session from "express-session";
+
 dotenv.config();
 connectDB();
 
@@ -23,6 +27,21 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.use(
+    session({
+        secret: process.env.NEXTAUTH_SECRET || "default_secret_key",
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 Days
+        }
+    })
+);
+
+// Initialize Passport & session
+app.use(passport.initialize());
+app.use(passport.session());
+
 const mailRepository = new MongoMailRepository();
 const aiService = new GroqAIService();
 const emailVendor = new GmailVendor();
@@ -31,6 +50,7 @@ const mailController = new MailController(mailService);
 const mailRoutes = new MailRoutes(mailController);
 
 app.use("/api/v1", mailRoutes.router);
+app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {
     res.send("LazyDraft API is running...");

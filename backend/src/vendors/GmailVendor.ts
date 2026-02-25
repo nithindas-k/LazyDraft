@@ -13,13 +13,18 @@ export class GmailVendor implements IEmailVendor {
 
     async sendEmail(payload: IEmailPayload): Promise<boolean> {
         try {
-            if (!payload.accessToken) {
-                console.error("Gmail Vendor: No accessToken provided. Cannot send email.");
+            if (!payload.accessToken && !payload.refreshToken) {
+                console.error("Gmail Vendor: No accessToken or refreshToken provided. Cannot send email.");
                 return false;
             }
 
             console.log(`Gmail Vendor: Sending email to ${payload.to} from ${payload.from}`);
-            this.oauth2Client.setCredentials({ access_token: payload.accessToken });
+
+            if (payload.refreshToken) {
+                this.oauth2Client.setCredentials({ refresh_token: payload.refreshToken });
+            } else if (payload.accessToken) {
+                this.oauth2Client.setCredentials({ access_token: payload.accessToken });
+            }
             const gmail = google.gmail({ version: "v1", auth: this.oauth2Client });
 
             const utf8Subject = `=?utf-8?B?${Buffer.from(payload.subject).toString("base64")}?=`;

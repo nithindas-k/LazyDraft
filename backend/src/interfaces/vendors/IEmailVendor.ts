@@ -5,6 +5,7 @@ export interface IEmailPayload {
     text: string;
     html?: string;
     accessToken?: string;
+    refreshToken?: string;
 }
 
 export interface IEmailVendor {

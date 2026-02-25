@@ -1,0 +1,45 @@
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import { connectDB } from "./config/db";
+import { MailRoutes } from "./routes/mail.routes";
+import { MailController } from "./controllers/mail.controller";
+import { MailService } from "./services/mail.service";
+import { GroqAIService } from "./services/ai.service";
+import { MongoMailRepository } from "./repositories/mail.repository";
+import { GmailVendor } from "./vendors/GmailVendor";
+
+
+dotenv.config();
+connectDB();
+
+const app = express();
+
+app.use(cors({
+    origin: ["http://localhost:5175", "http://localhost:5173"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+}));
+app.use(express.json());
+
+const mailRepository = new MongoMailRepository();
+const aiService = new GroqAIService();
+const emailVendor = new GmailVendor();
+const mailService = new MailService(mailRepository, aiService, emailVendor);
+const mailController = new MailController(mailService);
+const mailRoutes = new MailRoutes(mailController);
+
+app.use("/api/v1", mailRoutes.router);
+
+app.get("/", (req, res) => {
+    res.send("LazyDraft API is running...");
+});
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
+
+export default app;

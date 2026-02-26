@@ -31,7 +31,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const checkAuth = async () => {
         try {
-            const { data } = await axios.get(`${API_BASE_URL}/auth/me`);
+            const token = localStorage.getItem("token");
+            const { data } = await axios.get(`${API_BASE_URL}/auth/me`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            });
             if (data.success && data.user) {
                 setUser(data.user);
             } else {
@@ -45,6 +48,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const tokenFromUrl = params.get("token");
+        if (tokenFromUrl) {
+            localStorage.setItem("token", tokenFromUrl);
+            params.delete("token");
+            const next = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+            window.history.replaceState({}, "", next);
+        }
         checkAuth();
     }, []);
 

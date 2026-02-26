@@ -8,7 +8,11 @@ dotenv.config();
 
 const router = Router();
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5175";
+function getFrontendUrl(): string {
+    const configured = (process.env.FRONTEND_URL || "").trim();
+    if (configured) return configured.replace(/\/+$/, "");
+    return "http://localhost:5175";
+}
 
 
 router.get(
@@ -29,7 +33,7 @@ router.get(
 router.get(
     "/google/callback",
     passport.authenticate("google", {
-        failureRedirect: `${FRONTEND_URL}/login?error=true`,
+        failureRedirect: `${getFrontendUrl()}/login?error=true`,
         session: true
     }),
     (req: any, res) => {
@@ -40,8 +44,8 @@ router.get(
             { expiresIn: "7d" }
         );
 
-
-        res.redirect(`${FRONTEND_URL}/user/dashboard?token=${token}`);
+        const frontendUrl = getFrontendUrl();
+        res.redirect(`${frontendUrl}/user/dashboard?token=${token}`);
     }
 );
 

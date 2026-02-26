@@ -14,6 +14,37 @@ function getFrontendUrl(): string {
     return "http://localhost:5175";
 }
 
+async function resolveAuthenticatedUser(req: any) {
+    // Session auth (passport)
+    if (req.isAuthenticated?.() && req.user?._id) {
+        return User.findById(req.user._id);
+    }
+
+    // JWT auth (Bearer token)
+    const authHeader = req.headers?.authorization as string | undefined;
+    if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.split(" ")[1];
+        try {
+            const decoded = jwt.verify(
+                token,
+                process.env.NEXTAUTH_SECRET || "fallback_secret"
+            ) as { id?: string; email?: string };
+
+            if (decoded?.id) {
+                const byId = await User.findById(decoded.id);
+                if (byId) return byId;
+            }
+            if (decoded?.email) {
+                return User.findOne({ email: decoded.email });
+            }
+        } catch {
+            return null;
+        }
+    }
+
+    return null;
+}
+
 
 router.get(
     "/google",
@@ -51,12 +82,13 @@ router.get(
 
 
 router.get("/me", async (req: any, res) => {
-    if (!req.isAuthenticated() || !req.user) {
+    const authUser = await resolveAuthenticatedUser(req);
+    if (!authUser?._id) {
         return res.status(401).json({ success: false, message: "Not authenticated" });
     }
 
     try {
-        const user = await User.findById(req.user._id).select("-refreshToken");
+        const user = await User.findById(authUser._id).select("-refreshToken");
         return res.status(200).json({ success: true, user });
     } catch (error) {
         return res.status(500).json({ success: false, message: "Server error" });
@@ -64,7 +96,8 @@ router.get("/me", async (req: any, res) => {
 });
 
 router.put("/me", async (req: any, res) => {
-    if (!req.isAuthenticated() || !req.user) {
+    const authUser = await resolveAuthenticatedUser(req);
+    if (!authUser?._id) {
         return res.status(401).json({ success: false, message: "Not authenticated" });
     }
 
@@ -74,7 +107,7 @@ router.put("/me", async (req: any, res) => {
             return res.status(400).json({ success: false, message: "Name is required" });
         }
 
-        const user = await User.findById(req.user._id);
+        const user = await User.findById(authUser._id);
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
@@ -82,7 +115,7 @@ router.put("/me", async (req: any, res) => {
         user.name = name.trim();
         await user.save();
 
-        const updatedUser = await User.findById(req.user._id).select("-refreshToken");
+        const updatedUser = await User.findById(authUser._id).select("-refreshToken");
         return res.status(200).json({ success: true, user: updatedUser, message: "Profile updated successfully" });
     } catch (error) {
         console.error("Update profile error:", error);

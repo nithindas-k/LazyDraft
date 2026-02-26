@@ -5,7 +5,7 @@ import { ITemplateEntity } from "../repositories/ITemplateRepository";
 
 export interface IMailService {
     parseTextToEmail(text: string, fromEmail?: string, tone?: string, language?: string, length?: string): Promise<IAIParsedMail>;
-    sendEmail(mailData: IMailEntity, googleAccessToken?: string, refreshToken?: string): Promise<IMailEntity>;
+    sendEmail(mailData: IMailEntity, googleAccessToken?: string, refreshToken?: string, trackingBaseUrl?: string): Promise<IMailEntity>;
     getUserEmails(userId: string): Promise<IMailEntity[]>;
     getGmailAnalytics(refreshToken: string): Promise<IGmailAnalytics>;
     suggestSubjects(body: string): Promise<string[]>;

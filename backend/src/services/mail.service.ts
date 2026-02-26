@@ -25,7 +25,7 @@ export class MailService implements IMailService {
         return await this.aiService.suggestSubjects(body);
     }
 
-    async sendEmail(mailData: Omit<IMailEntity, "status">, googleAccessToken?: string, refreshToken?: string): Promise<IMailEntity> {
+    async sendEmail(mailData: Omit<IMailEntity, "status">, googleAccessToken?: string, refreshToken?: string, trackingBaseUrl?: string): Promise<IMailEntity> {
         console.log("=== MailService.sendEmail START ===");
         if (!mailData.to || !mailData.subject || !mailData.content) {
             throw new Error("Incomplete email data: to, subject, and content are required");
@@ -47,9 +47,9 @@ export class MailService implements IMailService {
         }
 
         try {
-            const trackingBaseUrl = process.env.PUBLIC_API_URL || process.env.API_BASE_URL || "http://localhost:5000";
+            const resolvedTrackingBaseUrl = (trackingBaseUrl || process.env.PUBLIC_API_URL || process.env.API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
             const trackedContent = savedMail.id
-                ? `${mailData.content}<img src="${trackingBaseUrl}/api/v1/track/open?id=${savedMail.id}" width="1" height="1" alt="" style="display:none;" />`
+                ? `${mailData.content}<img src="${resolvedTrackingBaseUrl}/api/v1/track/open?id=${encodeURIComponent(savedMail.id)}" width="1" height="1" alt="" style="display:none;" referrerpolicy="no-referrer" />`
                 : mailData.content;
 
             const isSent = await this.emailVendor.sendEmail({

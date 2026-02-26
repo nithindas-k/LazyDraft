@@ -63,10 +63,17 @@ export class MailController {
                 return;
             }
 
+            const forwardedProto = (req.headers["x-forwarded-proto"] as string | undefined)?.split(",")[0]?.trim();
+            const protocol = forwardedProto || req.protocol || "http";
+            const host = req.get("host");
+            const requestBaseUrl = host ? `${protocol}://${host}` : undefined;
+            const trackingBaseUrl = process.env.PUBLIC_API_URL || process.env.API_BASE_URL || requestBaseUrl;
+
             const sentMail = await this.mailService.sendEmail(
                 { userId, to, from, cc, bcc, subject, content, tone, language, status: "PENDING" },
                 googleAccessToken,
-                refreshToken
+                refreshToken,
+                trackingBaseUrl
             );
             res.set("Cache-Control", "no-store");
             res.status(HTTP_STATUS.CREATED).json({ success: true, message: MESSAGES.MAIL_SENT, data: sentMail });

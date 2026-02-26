@@ -5,12 +5,15 @@ import { User } from "../models/User";
 
 dotenv.config();
 
+const PUBLIC_API_URL = (process.env.PUBLIC_API_URL || "http://localhost:5000").replace(/\/+$/, "");
+const GOOGLE_CALLBACK_URL = `${PUBLIC_API_URL}/api/auth/google/callback`;
+
 passport.use(
     new GoogleStrategy(
         {
             clientID: process.env.GOOGLE_CLIENT_ID || "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-            callbackURL: "/api/auth/google/callback",
+            callbackURL: GOOGLE_CALLBACK_URL,
         },
         async (accessToken, refreshToken, profile, done) => {
             try {

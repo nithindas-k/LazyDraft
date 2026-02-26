@@ -8,6 +8,7 @@ export const APP_ROUTES = {
         MAIL_SENDER: "/user/mail/sender",
         HISTORY: "/user/mail/history",
         SETTINGS: "/user/settings",
+        TEMPLATES: "/user/templates",
     },
     ADMIN: {
         DASHBOARD: "/admin/dashboard",
@@ -18,9 +19,14 @@ export const APP_ROUTES = {
 export const API_ENDPOINTS = {
     MAIL: {
         PARSE: "/v1/mail/ai/parse",
+        SUGGEST_SUBJECTS: "/v1/mail/ai/suggest-subjects",
         SEND: "/v1/mail/send",
         HISTORY: "/v1/mail/history",
         ANALYTICS: "/v1/mail/gmail/analytics",
+        CHECK_REPLIES: "/v1/mail/check-replies",
+    },
+    TEMPLATES: {
+        BASE: "/v1/templates",
+        BY_ID: (id: string) => `/v1/templates/${id}`,
     },
 };
-

@@ -20,6 +20,8 @@ interface IMailRecord {
     subject: string;
     content: string;
     status: "SENT" | "FAILED" | "PENDING";
+    openedAt?: string;
+    repliedAt?: string;
     createdAt: string;
 }
 
@@ -179,6 +181,20 @@ function MailDetailModal({ email, onClose }: { email: IMailRecord; onClose: () =
                                     <p className="text-sm text-slate-700">{formatDateFull(email.createdAt)}</p>
                                 </div>
                             </div>
+                            {(email.openedAt || email.repliedAt) && (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    {email.openedAt && (
+                                        <span className="text-[11px] font-semibold px-2 py-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700">
+                                            Opened
+                                        </span>
+                                    )}
+                                    {email.repliedAt && (
+                                        <span className="text-[11px] font-semibold px-2 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700">
+                                            Replied ↩
+                                        </span>
+                                    )}
+                                </div>
+                            )}
                             {/* Status — mobile only */}
                             <div className="flex items-center gap-3 sm:hidden">
                                 <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -235,22 +251,32 @@ const HistoryPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [selected, setSelected] = useState<IMailRecord | null>(null);
 
+    const fetchHistory = async () => {
+        try {
+            const response = await MailService.getHistory();
+            if (response.success) {
+                setEmails(response.data);
+            } else {
+                setError("Failed to load history.");
+            }
+        } catch (err: any) {
+            setError(err.response?.data?.message || "Something went wrong loading emails.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchHistory = async () => {
+        const hydrateReplies = async () => {
+            await fetchHistory();
             try {
-                const response = await MailService.getHistory();
-                if (response.success) {
-                    setEmails(response.data);
-                } else {
-                    setError("Failed to load history.");
-                }
-            } catch (err: any) {
-                setError(err.response?.data?.message || "Something went wrong loading emails.");
-            } finally {
-                setLoading(false);
+                await MailService.checkReplies();
+                await fetchHistory();
+            } catch {
+                // Keep current history if reply sync fails.
             }
         };
-        fetchHistory();
+        hydrateReplies();
     }, []);
 
     return (
@@ -267,7 +293,7 @@ const HistoryPage: React.FC = () => {
                         <HistoryIcon className="w-6 h-6 text-slate-700" />
                         <h1 className="text-2xl font-bold text-slate-800">Email History</h1>
                     </div>
-                    <p className="text-slate-500 text-sm">All emails you've sent through LazyDraft.</p>
+                    <p className="text-slate-500 text-sm">All emails you've sent through LazyDraft, including open/reply status.</p>
                 </motion.div>
 
                 <AnimatePresence mode="wait">
@@ -323,14 +349,26 @@ const HistoryPage: React.FC = () => {
                                                         {email.to.charAt(0).toUpperCase()}
                                                     </div>
                                                     <div className="min-w-0 flex-1">
-                                                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                                                            <span className="text-xs font-semibold text-slate-700 truncate max-w-[180px]">{email.to}</span>
-                                                            <span className="text-[10px] text-slate-400">{formatDate(email.createdAt)}</span>
-                                                        </div>
-                                                        <p className="text-sm font-medium text-slate-800 truncate mb-0.5">{email.subject}</p>
-                                                        <p className="text-xs text-slate-500 line-clamp-1">{plainPreview}</p>
-                                                    </div>
+                                                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                                    <span className="text-xs font-semibold text-slate-700 truncate max-w-[180px]">{email.to}</span>
+                                                    <span className="text-[10px] text-slate-400">{formatDate(email.createdAt)}</span>
                                                 </div>
+                                                <p className="text-sm font-medium text-slate-800 truncate mb-0.5">{email.subject}</p>
+                                                <p className="text-xs text-slate-500 line-clamp-1">{plainPreview}</p>
+                                                <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                                    {email.openedAt && (
+                                                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700">
+                                                            Opened
+                                                        </span>
+                                                    )}
+                                                    {email.repliedAt && (
+                                                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700">
+                                                            Replied ↩
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
 
                                                 {/* Right */}
                                                 <div className="flex items-center gap-2 sm:gap-3 shrink-0 sm:flex-col sm:items-end">

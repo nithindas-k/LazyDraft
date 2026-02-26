@@ -4,11 +4,13 @@ import UserDashboard from "@/pages/user/Dashboard";
 import MailSenderPage from "@/pages/user/MailSender";
 import HistoryPage from "@/pages/user/History";
 import SettingsPage from "@/pages/user/Settings";
+import TemplatesPage from "@/pages/user/Templates";
 import LoginPage from "@/pages/auth/Login";
 import VerifyEmailPage from "@/pages/auth/VerifyEmail";
 import { APP_ROUTES } from "@/constants/routes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
+import { Toaster } from "@/components/ui/sonner";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -45,8 +47,27 @@ function App() {
             <Route path={APP_ROUTES.USER.MAIL_SENDER} element={<MailSenderPage />} />
             <Route path={APP_ROUTES.USER.HISTORY} element={<HistoryPage />} />
             <Route path={APP_ROUTES.USER.SETTINGS} element={<SettingsPage />} />
+            <Route path={APP_ROUTES.USER.TEMPLATES} element={<TemplatesPage />} />
           </Route>
         </Routes>
+
+        {/* Global toast notifications */}
+        <Toaster
+          position="top-center"
+          closeButton={false}
+          offset={16}
+          expand={false}
+          visibleToasts={3}
+          gap={8}
+          toastOptions={{
+            style: {
+              fontFamily: "inherit",
+              fontSize: "13px",
+              width: "min(94vw, 430px)",
+              borderRadius: "24px",
+            },
+          }}
+        />
       </BrowserRouter>
     </AuthProvider>
   );

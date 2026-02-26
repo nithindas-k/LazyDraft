@@ -39,6 +39,8 @@ export class GmailVendor implements IEmailVendor {
             const messageParts = [
                 `From: ${payload.from}`,
                 `To: ${payload.to}`,
+                ...(payload.cc ? [`Cc: ${payload.cc}`] : []),
+                ...(payload.bcc ? [`Bcc: ${payload.bcc}`] : []),
                 `Subject: ${utf8Subject}`,
                 "MIME-Version: 1.0",
                 "Content-Type: text/html; charset=utf-8",

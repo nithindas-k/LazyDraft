@@ -12,6 +12,7 @@ import {
     Menu,
     X,
     Settings,
+    LayoutTemplate,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Separator } from "../../components/ui/separator";
@@ -40,6 +41,7 @@ const NAV_ITEMS: NavItem[] = [
     { label: "Dashboard", href: APP_ROUTES.USER.DASHBOARD, icon: LayoutDashboard },
     { label: "Mail Sender", href: APP_ROUTES.USER.MAIL_SENDER, icon: Mail },
     { label: "History", href: APP_ROUTES.USER.HISTORY, icon: History },
+    { label: "Templates", href: APP_ROUTES.USER.TEMPLATES, icon: LayoutTemplate },
 ];
 
 // ─── Sidebar Context ─────────────────────────────────────────────────────────

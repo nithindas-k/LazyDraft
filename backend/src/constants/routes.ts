@@ -3,9 +3,19 @@ export const API_ROUTES = {
     MAIL: {
         BASE: "/mail",
         PARSE: "/ai/parse",
+        SUGGEST_SUBJECTS: "/ai/suggest-subjects",
         SEND: "/send",
         HISTORY: "/history",
         ANALYTICS: "/gmail/analytics",
+        CHECK_REPLIES: "/check-replies",
+    },
+    TEMPLATES: {
+        BASE: "/templates",
+        BY_ID: "/:id",
+    },
+    TRACK: {
+        BASE: "/track",
+        OPEN: "/open",
     },
     AUTH: {
         BASE: "/auth",

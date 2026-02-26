@@ -7,8 +7,8 @@ import { MailController } from "./controllers/mail.controller";
 import { MailService } from "./services/mail.service";
 import { GroqAIService } from "./services/ai.service";
 import { MongoMailRepository } from "./repositories/mail.repository";
+import { MongoTemplateRepository } from "./repositories/template.repository";
 import { GmailVendor } from "./vendors/GmailVendor";
-
 
 import passport from "./config/passport";
 import authRoutes from "./routes/auth.routes";
@@ -38,14 +38,14 @@ app.use(
     })
 );
 
-// Initialize Passport & session
 app.use(passport.initialize());
 app.use(passport.session());
 
 const mailRepository = new MongoMailRepository();
+const templateRepository = new MongoTemplateRepository();
 const aiService = new GroqAIService();
 const emailVendor = new GmailVendor();
-const mailService = new MailService(mailRepository, aiService, emailVendor);
+const mailService = new MailService(mailRepository, aiService, emailVendor, templateRepository);
 const mailController = new MailController(mailService);
 const mailRoutes = new MailRoutes(mailController);
 

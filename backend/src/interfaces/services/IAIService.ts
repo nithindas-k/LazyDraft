@@ -6,5 +6,6 @@ export interface IAIParsedMail {
 }
 
 export interface IAIService {
-    parseUnstructuredText(text: string, fromEmail?: string): Promise<IAIParsedMail>;
+    parseUnstructuredText(text: string, fromEmail?: string, tone?: string, language?: string, length?: string): Promise<IAIParsedMail>;
+    suggestSubjects(body: string): Promise<string[]>;
 }

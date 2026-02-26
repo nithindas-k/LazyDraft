@@ -30,6 +30,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 
     const checkAuth = async () => {
+        if (!API_BASE_URL) {
+            setUser(null);
+            setLoading(false);
+            return;
+        }
         try {
             const token = localStorage.getItem("token");
             const { data } = await axios.get(`${API_BASE_URL}/auth/me`, {
@@ -61,7 +66,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 
     const loginWithGoogle = () => {
-
+        if (!API_BASE_URL) {
+            console.error("Missing VITE_API_URL in production environment");
+            return;
+        }
         window.location.href = `${API_BASE_URL}/auth/google`;
     };
 

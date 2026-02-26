@@ -11,6 +11,7 @@ export interface IMailDocument extends Document {
     status: "SENT" | "FAILED" | "PENDING";
     tone?: string;
     language?: string;
+    scheduledAt?: Date;
     openedAt?: Date;
     repliedAt?: Date;
     createdAt: Date;
@@ -27,6 +28,7 @@ const MailSchema = new Schema<IMailDocument>({
     status: { type: String, enum: ["SENT", "FAILED", "PENDING"], default: "PENDING" },
     tone: { type: String },
     language: { type: String },
+    scheduledAt: { type: Date },
     openedAt: { type: Date },
     repliedAt: { type: Date },
     createdAt: { type: Date, default: Date.now },

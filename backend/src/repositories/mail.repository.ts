@@ -14,6 +14,7 @@ function toEntity(mail: any): IMailEntity {
         status: mail.status,
         tone: mail.tone,
         language: mail.language,
+        scheduledAt: mail.scheduledAt,
         openedAt: mail.openedAt,
         repliedAt: mail.repliedAt,
         createdAt: mail.createdAt,
@@ -33,6 +34,7 @@ export class MongoMailRepository implements IMailRepository {
             status: mail.status || "PENDING",
             tone: mail.tone,
             language: mail.language,
+            scheduledAt: mail.scheduledAt,
         });
         const savedMail = await newMail.save();
         return toEntity(savedMail.toObject());
@@ -46,6 +48,17 @@ export class MongoMailRepository implements IMailRepository {
 
     async findByUserId(userId: string): Promise<IMailEntity[]> {
         const mails = await Mail.find({ userId }).sort({ createdAt: -1 }).lean();
+        return mails.map(toEntity);
+    }
+
+    async findDueScheduled(now: Date, limit = 20): Promise<IMailEntity[]> {
+        const mails = await Mail.find({
+            status: "PENDING",
+            scheduledAt: { $lte: now, $ne: null },
+        })
+            .sort({ scheduledAt: 1 })
+            .limit(limit)
+            .lean();
         return mails.map(toEntity);
     }
 

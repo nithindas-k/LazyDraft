@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { UserLayout } from "@/components/common/UserLayout";
 import UserDashboard from "@/pages/user/Dashboard";
 import MailSenderPage from "@/pages/user/MailSender";
+import RecurringMailPage from "@/pages/user/RecurringMail";
 import HistoryPage from "@/pages/user/History";
 import SettingsPage from "@/pages/user/Settings";
 import TemplatesPage from "@/pages/user/Templates";
@@ -45,6 +46,7 @@ function App() {
           <Route element={<ProtectedRoute><UserLayout /></ProtectedRoute>}>
             <Route path={APP_ROUTES.USER.DASHBOARD} element={<UserDashboard />} />
             <Route path={APP_ROUTES.USER.MAIL_SENDER} element={<MailSenderPage />} />
+            <Route path={APP_ROUTES.USER.RECURRING_MAIL} element={<RecurringMailPage />} />
             <Route path={APP_ROUTES.USER.HISTORY} element={<HistoryPage />} />
             <Route path={APP_ROUTES.USER.SETTINGS} element={<SettingsPage />} />
             <Route path={APP_ROUTES.USER.TEMPLATES} element={<TemplatesPage />} />

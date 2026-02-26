@@ -17,6 +17,7 @@ export interface SendEmailPayload {
     content: string;
     tone?: string;
     language?: string;
+    scheduledAt?: string;
     googleAccessToken?: string | null;
 }
 
@@ -34,6 +35,20 @@ export interface TemplateItem {
     subject?: string;
     body?: string;
     createdAt: string;
+}
+
+export interface RecurringMailPayload {
+    name: string;
+    from: string;
+    to: string[];
+    cc?: string[];
+    bcc?: string[];
+    subject: string;
+    content: string;
+    daysOfWeek: number[];
+    timeOfDay: string;
+    timezone: string;
+    isActive?: boolean;
 }
 
 export const MailService = {
@@ -87,5 +102,29 @@ export const MailService = {
 
     async deleteTemplate(id: string): Promise<{ success: boolean }> {
         return axiosInstance.delete(API_ENDPOINTS.TEMPLATES.BY_ID(id));
+    },
+
+    async getRecurringMails(): Promise<{ success: boolean; data: any[] }> {
+        return axiosInstance.get(API_ENDPOINTS.RECURRING_MAILS.BASE);
+    },
+
+    async createRecurringMail(payload: RecurringMailPayload): Promise<{ success: boolean; data: any }> {
+        return axiosInstance.post(API_ENDPOINTS.RECURRING_MAILS.BASE, payload);
+    },
+
+    async updateRecurringMail(id: string, payload: Partial<RecurringMailPayload>): Promise<{ success: boolean; data: any }> {
+        return axiosInstance.patch(API_ENDPOINTS.RECURRING_MAILS.BY_ID(id), payload);
+    },
+
+    async toggleRecurringMail(id: string): Promise<{ success: boolean; data: any }> {
+        return axiosInstance.patch(API_ENDPOINTS.RECURRING_MAILS.TOGGLE(id));
+    },
+
+    async runRecurringNow(id: string): Promise<{ success: boolean }> {
+        return axiosInstance.post(API_ENDPOINTS.RECURRING_MAILS.RUN_NOW(id));
+    },
+
+    async deleteRecurringMail(id: string): Promise<{ success: boolean }> {
+        return axiosInstance.delete(API_ENDPOINTS.RECURRING_MAILS.BY_ID(id));
     },
 };

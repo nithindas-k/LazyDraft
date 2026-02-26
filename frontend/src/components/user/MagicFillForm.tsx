@@ -6,7 +6,7 @@ import * as z from "zod";
 import {
     Wand2, Send, Loader2, ShieldCheck, Mail,
     CheckCircle2, Zap, RefreshCw, BookOpen, Sparkles, FileText,
-    ChevronDown, ChevronUp, Eye, LayoutTemplate, Save, XCircle,
+    ChevronDown, ChevronUp, Eye, LayoutTemplate, Save, XCircle, CalendarClock,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -428,6 +428,8 @@ export const MagicFillForm: React.FC = () => {
 
     // Preview
     const [showPreview, setShowPreview] = useState(false);
+    const [isScheduleMode, setIsScheduleMode] = useState(false);
+    const [scheduledAtInput, setScheduledAtInput] = useState("");
 
     // Draft restore
     const [showDraftBanner, setShowDraftBanner] = useState(false);
@@ -512,6 +514,17 @@ export const MagicFillForm: React.FC = () => {
     };
 
     const onSubmit = async (values: MailFormValues) => {
+        if (isScheduleMode) {
+            if (!scheduledAtInput) {
+                toast.error("Choose a schedule date and time first.");
+                return;
+            }
+            const ts = new Date(scheduledAtInput).getTime();
+            if (Number.isNaN(ts) || ts <= Date.now()) {
+                toast.error("Scheduled time must be in the future.");
+                return;
+            }
+        }
         setSendError(""); setSendStatus("sending"); setDialogOpen(true);
         try {
             const response = await MailService.sendEmail({
@@ -522,13 +535,20 @@ export const MagicFillForm: React.FC = () => {
                 from: values.from,
                 tone,
                 language,
+                scheduledAt: isScheduleMode ? new Date(scheduledAtInput).toISOString() : undefined,
             });
             if (response.success) {
                 setSendStatus("success");
-                toast.success(`Email sent to ${values.to}.`, { icon: <CheckCircle2 className="w-4 h-4" /> });
+                if (isScheduleMode) {
+                    toast.success(`Schedule saved. Email will be sent at ${new Date(scheduledAtInput).toLocaleString()}.`, { icon: <CalendarClock className="w-4 h-4" /> });
+                } else {
+                    toast.success(`Email sent to ${values.to}.`, { icon: <CheckCircle2 className="w-4 h-4" /> });
+                }
                 form.reset({ from: connectedEmail, to: "", cc: "", bcc: "", subject: "", body: "" });
                 setMagicText("");
                 setSubjectSuggestions([]);
+                setIsScheduleMode(false);
+                setScheduledAtInput("");
                 clearDraft();
             } else {
                 setSendStatus("error");
@@ -778,6 +798,31 @@ export const MagicFillForm: React.FC = () => {
                                     )} />
 
                                     {/* Send */}
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <Label className="text-xs font-medium text-slate-700">Delivery</Label>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsScheduleMode(v => !v)}
+                                                className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                                            >
+                                                {isScheduleMode ? "Send Now" : "Schedule Send"}
+                                            </button>
+                                        </div>
+                                        {isScheduleMode && (
+                                            <div className="space-y-1">
+                                                <Label className="text-xs text-slate-600">Schedule date and time</Label>
+                                                <Input
+                                                    id="scheduled-at-input"
+                                                    type="datetime-local"
+                                                    value={scheduledAtInput}
+                                                    onChange={(e) => setScheduledAtInput(e.target.value)}
+                                                    min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+
                                     <motion.div whileTap={{ scale: 0.97 }}>
                                         <Button id="send-email-btn" type="submit"
                                             className="w-full h-11 text-white font-semibold rounded-xl shadow-md"
@@ -785,7 +830,9 @@ export const MagicFillForm: React.FC = () => {
                                             disabled={sendStatus === "sending"}>
                                             {sendStatus === "sending"
                                                 ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sendingâ€¦</>
-                                                : <><Zap className="mr-2 h-4 w-4" />Send Email</>}
+                                                : isScheduleMode
+                                                    ? <><CalendarClock className="mr-2 h-4 w-4" />Schedule Email</>
+                                                    : <><Zap className="mr-2 h-4 w-4" />Send Email</>}
                                         </Button>
                                     </motion.div>
                                 </form>

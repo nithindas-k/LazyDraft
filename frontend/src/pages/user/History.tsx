@@ -20,6 +20,7 @@ interface IMailRecord {
     subject: string;
     content: string;
     status: "SENT" | "FAILED" | "PENDING";
+    scheduledAt?: string;
     openedAt?: string;
     repliedAt?: string;
     createdAt: string;
@@ -177,8 +178,8 @@ function MailDetailModal({ email, onClose }: { email: IMailRecord; onClose: () =
                                     <Calendar className="w-3.5 h-3.5" style={{ color: G_GREEN }} />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Sent At</p>
-                                    <p className="text-sm text-slate-700">{formatDateFull(email.createdAt)}</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{email.status === "PENDING" && email.scheduledAt ? "Scheduled For" : "Sent At"}</p>
+                                    <p className="text-sm text-slate-700">{email.status === "PENDING" && email.scheduledAt ? formatDateFull(email.scheduledAt) : formatDateFull(email.createdAt)}</p>
                                 </div>
                             </div>
                             {(email.openedAt || email.repliedAt) && (
@@ -357,6 +358,11 @@ const HistoryPage: React.FC = () => {
                                                 <p className="text-sm font-medium text-slate-800 truncate mb-0.5">{email.subject}</p>
                                                 <p className="text-xs text-slate-500 line-clamp-1">{plainPreview}</p>
                                                 <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                                    {email.status === "PENDING" && email.scheduledAt && new Date(email.scheduledAt).getTime() > Date.now() && (
+                                                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-violet-200 bg-violet-50 text-violet-700">
+                                                            Scheduled
+                                                        </span>
+                                                    )}
                                                     {email.openedAt && (
                                                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700">
                                                             Opened

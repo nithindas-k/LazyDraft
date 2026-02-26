@@ -8,6 +8,7 @@ import { MailService } from "./services/mail.service";
 import { GroqAIService } from "./services/ai.service";
 import { MongoMailRepository } from "./repositories/mail.repository";
 import { MongoTemplateRepository } from "./repositories/template.repository";
+import { MongoRecurringMailRepository } from "./repositories/recurring-mail.repository";
 import { GmailVendor } from "./vendors/GmailVendor";
 
 import passport from "./config/passport";
@@ -43,9 +44,10 @@ app.use(passport.session());
 
 const mailRepository = new MongoMailRepository();
 const templateRepository = new MongoTemplateRepository();
+const recurringMailRepository = new MongoRecurringMailRepository();
 const aiService = new GroqAIService();
 const emailVendor = new GmailVendor();
-const mailService = new MailService(mailRepository, aiService, emailVendor, templateRepository);
+const mailService = new MailService(mailRepository, aiService, emailVendor, templateRepository, recurringMailRepository);
 const mailController = new MailController(mailService);
 const mailRoutes = new MailRoutes(mailController);
 
@@ -57,6 +59,20 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+// Process due scheduled emails frequently for near-time delivery.
+setInterval(() => {
+    mailService.processScheduledEmails().catch((err) => {
+        console.error("Scheduled email processing error:", err?.message || err);
+    });
+}, 15 * 1000);
+
+// Process recurring mails.
+setInterval(() => {
+    mailService.processRecurringMails().catch((err) => {
+        console.error("Recurring email processing error:", err?.message || err);
+    });
+}, 15 * 1000);
 
 app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

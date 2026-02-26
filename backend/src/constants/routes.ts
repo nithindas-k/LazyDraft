@@ -17,6 +17,12 @@ export const API_ROUTES = {
         BASE: "/track",
         OPEN: "/open",
     },
+    RECURRING_MAILS: {
+        BASE: "/recurring-mails",
+        BY_ID: "/:id",
+        TOGGLE: "/:id/toggle",
+        RUN_NOW: "/:id/run-now",
+    },
     AUTH: {
         BASE: "/auth",
         LOGIN: "/login",

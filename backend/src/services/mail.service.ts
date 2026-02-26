@@ -2,6 +2,8 @@ import { IMailService } from "../interfaces/services/IMailService";
 import { IMailRepository, IMailEntity } from "../interfaces/repositories/IMailRepository";
 import { IAIService, IAIParsedMail } from "../interfaces/services/IAIService";
 import { IEmailVendor } from "../interfaces/vendors/IEmailVendor";
+import { GmailVendor, IGmailAnalytics } from "../vendors/GmailVendor";
+
 
 export class MailService implements IMailService {
     constructor(
@@ -84,6 +86,10 @@ export class MailService implements IMailService {
         const results = await this.mailRepository.findByUserId(userId);
         console.log("MailService.getUserEmails found:", results.length, "records");
         return results;
+    }
+
+    async getGmailAnalytics(refreshToken: string): Promise<IGmailAnalytics> {
+        return (this.emailVendor as GmailVendor).getGmailAnalytics(refreshToken);
     }
 }
 

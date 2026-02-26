@@ -20,5 +20,7 @@ export const API_ENDPOINTS = {
         PARSE: "/v1/mail/ai/parse",
         SEND: "/v1/mail/send",
         HISTORY: "/v1/mail/history",
+        ANALYTICS: "/v1/mail/gmail/analytics",
     },
 };
+

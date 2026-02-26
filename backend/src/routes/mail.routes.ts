@@ -15,9 +15,8 @@ export class MailRoutes {
 
     private initializeRoutes() {
         this.router.post(API_ROUTES.MAIL.BASE + API_ROUTES.MAIL.PARSE, isAuthenticated, this.mailController.parseText);
-
         this.router.post(API_ROUTES.MAIL.BASE + API_ROUTES.MAIL.SEND, isAuthenticated, this.mailController.sendEmail);
-
         this.router.get(API_ROUTES.MAIL.BASE + API_ROUTES.MAIL.HISTORY, isAuthenticated, this.mailController.getHistory);
+        this.router.get(API_ROUTES.MAIL.BASE + API_ROUTES.MAIL.ANALYTICS, isAuthenticated, this.mailController.getGmailAnalytics);
     }
 }

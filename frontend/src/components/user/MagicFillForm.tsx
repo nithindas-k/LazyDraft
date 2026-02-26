@@ -574,7 +574,7 @@ function SendDialog({ open, status, errorMessage, onClose }: SendDialogProps) {
                                 {/* Text */}
                                 <div className="text-center space-y-1">
                                     <DialogTitle className="text-base sm:text-xl font-bold text-slate-800">
-                                        🎉 Email Delivered!
+                                         Email Delivered!
                                     </DialogTitle>
                                     <DialogDescription className="text-xs sm:text-sm text-slate-500">
                                         Your message is on its way to the recipient's inbox.

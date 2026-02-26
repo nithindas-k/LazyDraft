@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { APP_ROUTES } from "@/constants/routes";
 import { useAuth } from "@/contexts/AuthContext";
 import { MailService } from "@/services/mail.service";
+import GmailAnalytics from "@/components/user/GmailAnalytics";
+
 
 const G_BLUE = "#4285F4";
 const G_GREEN = "#34A853";
@@ -160,6 +162,18 @@ const UserDashboard: React.FC = () => {
                     </CardContent>
                 </Card>
             </motion.div>
+
+            {/* ── Gmail Analytics ── */}
+            <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.4 }}
+            >
+                <div className="border-t border-slate-100 pt-6">
+                    <GmailAnalytics />
+                </div>
+            </motion.div>
+
         </div>
     );
 };

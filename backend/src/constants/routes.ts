@@ -5,6 +5,7 @@ export const API_ROUTES = {
         PARSE: "/ai/parse",
         SEND: "/send",
         HISTORY: "/history",
+        ANALYTICS: "/gmail/analytics",
     },
     AUTH: {
         BASE: "/auth",

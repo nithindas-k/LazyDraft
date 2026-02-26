@@ -76,4 +76,24 @@ export class MailController {
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR, data: null });
         }
     };
+
+    getGmailAnalytics = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const user = (req as any).user;
+            const refreshToken = user?.refreshToken;
+
+            if (!refreshToken) {
+                res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: "No Google refresh token found. Please reconnect your Gmail account.", data: null });
+                return;
+            }
+
+            const analytics = await this.mailService.getGmailAnalytics(refreshToken);
+            res.set("Cache-Control", "no-store");
+            res.status(HTTP_STATUS.OK).json({ success: true, message: "Analytics fetched", data: analytics });
+        } catch (error: any) {
+            console.error("GetGmailAnalytics Error:", error.message);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message || "Failed to fetch Gmail analytics.", data: null });
+        }
+    };
 }
+

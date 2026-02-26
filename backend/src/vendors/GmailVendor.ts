@@ -1,6 +1,14 @@
 import { google } from "googleapis";
 import { IEmailVendor, IEmailPayload } from "../interfaces/vendors/IEmailVendor";
 
+export interface IGmailAnalytics {
+    totalInbox: number;
+    unread: number;
+    topSenders: { email: string; count: number }[];
+    dailyVolume: { date: string; received: number }[];
+    labels: { name: string; count: number }[];
+}
+
 export class GmailVendor implements IEmailVendor {
     private oauth2Client;
 
@@ -68,5 +76,88 @@ export class GmailVendor implements IEmailVendor {
 
             return false;
         }
+    }
+
+    async getGmailAnalytics(refreshToken: string): Promise<IGmailAnalytics> {
+        this.oauth2Client.setCredentials({ refresh_token: refreshToken });
+        const gmail = google.gmail({ version: "v1", auth: this.oauth2Client });
+
+        // 1. Fetch up to 100 recent message IDs
+        const listRes = await gmail.users.messages.list({
+            userId: "me",
+            maxResults: 100,
+            labelIds: ["INBOX"],
+        });
+        const messages = listRes.data.messages || [];
+        const totalInbox = listRes.data.resultSizeEstimate || messages.length;
+
+        // 2. Fetch unread count
+        const unreadRes = await gmail.users.messages.list({
+            userId: "me",
+            maxResults: 1,
+            labelIds: ["INBOX", "UNREAD"],
+            q: "is:unread",
+        });
+        const unread = unreadRes.data.resultSizeEstimate || 0;
+
+        // 3. Batch fetch metadata (minimal format — no bodies)
+        const metaList = await Promise.all(
+            messages.slice(0, 50).map((m) =>
+                gmail.users.messages.get({
+                    userId: "me",
+                    id: m.id!,
+                    format: "metadata",
+                    metadataHeaders: ["From", "Date"],
+                })
+            )
+        );
+
+        // 4. Aggregate top senders
+        const senderMap: Record<string, number> = {};
+        const dateMap: Record<string, number> = {};
+
+        for (const msg of metaList) {
+            const headers = msg.data.payload?.headers || [];
+            const fromHeader = headers.find((h) => h.name === "From")?.value || "";
+            const dateHeader = headers.find((h) => h.name === "Date")?.value || "";
+
+            // Extract email address from "Name <email>" format
+            const emailMatch = fromHeader.match(/<(.+?)>/) || fromHeader.match(/(\S+@\S+)/);
+            const senderEmail = emailMatch ? emailMatch[1].toLowerCase() : fromHeader.toLowerCase();
+            if (senderEmail) senderMap[senderEmail] = (senderMap[senderEmail] || 0) + 1;
+
+            // Group by date (last 14 days)
+            if (dateHeader) {
+                try {
+                    const d = new Date(dateHeader);
+                    const key = d.toISOString().split("T")[0]; // YYYY-MM-DD
+                    dateMap[key] = (dateMap[key] || 0) + 1;
+                } catch { /* skip malformed */ }
+            }
+        }
+
+        const topSenders = Object.entries(senderMap)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([email, count]) => ({ email, count }));
+
+        // Build last 14 days volume (fill missing days with 0)
+        const dailyVolume: { date: string; received: number }[] = [];
+        for (let i = 13; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const key = d.toISOString().split("T")[0];
+            dailyVolume.push({ date: key, received: dateMap[key] || 0 });
+        }
+
+        // 5. Fetch label list
+        const labelsRes = await gmail.users.labels.list({ userId: "me" });
+        const systemLabels = ["INBOX", "SENT", "DRAFT", "SPAM", "TRASH", "UNREAD", "STARRED"];
+        const userLabels = (labelsRes.data.labels || [])
+            .filter((l) => !systemLabels.includes(l.id || "") && l.type === "user")
+            .slice(0, 6)
+            .map((l) => ({ name: l.name || "Label", count: l.messagesTotal || 0 }));
+
+        return { totalInbox, unread, topSenders, dailyVolume, labels: userLabels };
     }
 }

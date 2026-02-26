@@ -85,7 +85,8 @@ export const MailService = {
     // Templates
     async getTemplates(): Promise<{ success: boolean; data: TemplateItem[] }> {
         const res = await axiosInstance.get(API_ENDPOINTS.TEMPLATES.BASE);
-        const normalized = (res.data || []).map((t: any) => ({
+        const source = Array.isArray((res as any)?.data) ? (res as any).data : Array.isArray(res) ? res : [];
+        const normalized = source.map((t: any) => ({
             id: t.id || t._id,
             name: t.name,
             to: t.to,
@@ -93,7 +94,7 @@ export const MailService = {
             body: t.body,
             createdAt: t.createdAt,
         }));
-        return { ...res, data: normalized };
+        return { success: true, data: normalized };
     },
 
     async createTemplate(payload: TemplatePayload): Promise<{ success: boolean; data: any }> {

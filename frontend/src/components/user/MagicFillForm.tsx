@@ -331,11 +331,11 @@ function SendDialog({ open, status, errorMessage, onClose }: SendDialogProps) {
                                     </motion.div>
                                 </div>
 
-                                <div className="text-center space-y-1">
+                                <div className="text-center space-y-2 w-full max-w-[320px] mx-auto">
                                     <DialogTitle className="text-base font-semibold text-slate-800">
                                         Failed to Send
                                     </DialogTitle>
-                                    <DialogDescription className="text-sm text-slate-400 break-words max-w-[280px]">
+                                    <DialogDescription className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200 shadow-sm leading-relaxed w-full break-words">
                                         {errorMessage || "Something went wrong. Please try again."}
                                     </DialogDescription>
                                 </div>
@@ -447,7 +447,7 @@ export const MagicFillForm: React.FC = () => {
                 onClose={closeDialog}
             />
 
-            <div className="grid gap-6 md:grid-cols-2 max-w-6xl mx-auto p-4">
+            <div className="grid gap-6 lg:grid-cols-2 max-w-6xl mx-auto px-2 sm:px-4 pb-10">
 
                 {/* ── Left: Magic Fill Card ── */}
                 <Card className="border-0 shadow-md">

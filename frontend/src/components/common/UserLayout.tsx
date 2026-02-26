@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { motion } from "framer-motion";
+
 import {
     SidebarProvider,
     DesktopSidebar,
@@ -25,10 +25,9 @@ function LayoutContent() {
             <MobileDrawer />
 
             {/* Main content — shifts right based on sidebar width */}
-            <motion.main
-                className="flex-1 flex flex-col"
-                animate={{ paddingLeft: collapsed ? 64 : 240 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            <main
+                className={`flex-1 flex flex-col transition-[padding] duration-300 ease-in-out ${collapsed ? "lg:pl-16" : "lg:pl-[240px]"
+                    }`}
             >
                 {/* Email Verification Banner */}
                 {user && user.isEmailVerified === false && (
@@ -46,7 +45,7 @@ function LayoutContent() {
                         <Outlet />
                     </div>
                 </div>
-            </motion.main>
+            </main>
         </div>
     );
 }

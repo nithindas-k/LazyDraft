@@ -26,14 +26,14 @@ const UserDashboard: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
             >
-                <h1 className="text-2xl font-bold text-slate-800">Welcome back 👋</h1>
+                <h1 className="text-2xl font-bold text-slate-800">Welcome back !</h1>
                 <p className="text-slate-500 mt-1 text-sm">
                     Use AI to draft and send professional emails in seconds.
                 </p>
             </motion.div>
 
             {/* Stats row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {statsCards.map((card, i) => {
                     const Icon = card.icon;
                     return (
@@ -64,7 +64,7 @@ const UserDashboard: React.FC = () => {
 
             {/* Quick actions */}
             <motion.div
-                className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.4 }}

@@ -21,7 +21,8 @@ connectDB();
 const app = express();
 
 app.use(cors({
-    origin: ["http://localhost:5175", "http://localhost:5173"],
+    origin: ["http://localhost:5175", "http://localhost:5173","https://lazy-draft-my42.vercel.app"
+],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,

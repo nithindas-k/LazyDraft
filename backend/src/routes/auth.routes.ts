@@ -8,9 +8,7 @@ dotenv.config();
 
 const router = Router();
 
-const FRONTEND_URL = process.env.NODE_ENV === "production"
-    ? "https://lazydraft.com"
-    : process.env.FRONTEND_URL || "http://localhost:5175";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5175";
 
 
 router.get(

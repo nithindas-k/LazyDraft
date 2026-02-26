@@ -4,13 +4,23 @@ import UserDashboard from "@/pages/user/Dashboard";
 import MailSenderPage from "@/pages/user/MailSender";
 import HistoryPage from "@/pages/user/History";
 import LoginPage from "@/pages/auth/Login";
+import VerifyEmailPage from "@/pages/auth/VerifyEmail";
 import { APP_ROUTES } from "@/constants/routes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
+        <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
+        <p className="text-slate-500 font-medium animate-pulse">Checking authentication...</p>
+      </div>
+    );
+  }
+
   if (!user) return <Navigate to="/login" replace />;
 
   return <>{children}</>;
@@ -23,6 +33,7 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path={APP_ROUTES.VERIFY_EMAIL} element={<VerifyEmailPage />} />
 
           {/* Redirect root to user dashboard */}
           <Route path={APP_ROUTES.HOME} element={<Navigate to={APP_ROUTES.USER.DASHBOARD} replace />} />

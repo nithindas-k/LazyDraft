@@ -6,6 +6,8 @@ export interface IUser extends Document {
     name: string;
     profilePic?: string;
     refreshToken?: string;
+    isEmailVerified: boolean;
+    verificationToken?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -17,6 +19,8 @@ const UserSchema: Schema = new Schema(
         name: { type: String, required: true },
         profilePic: { type: String },
         refreshToken: { type: String },
+        isEmailVerified: { type: Boolean, default: false },
+        verificationToken: { type: String },
     },
     { timestamps: true }
 );

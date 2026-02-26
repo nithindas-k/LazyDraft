@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     LayoutDashboard,
@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { APP_ROUTES } from "@/constants/routes";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface NavItem {
@@ -45,7 +46,7 @@ const SidebarContext = createContext<SidebarCtx>({
 });
 export const useSidebar = () => useContext(SidebarContext);
 
-// ─── Provider ────────────────────────────────────────────────────────────────
+
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
     const [collapsed, setCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -61,7 +62,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-// ─── Brand Logo ──────────────────────────────────────────────────────────────
+
 function SidebarLogo({ collapsed }: { collapsed: boolean }) {
     return (
         <div className="flex items-center gap-2.5 px-4 h-16">
@@ -85,7 +86,7 @@ function SidebarLogo({ collapsed }: { collapsed: boolean }) {
     );
 }
 
-// ─── Single Nav Item ─────────────────────────────────────────────────────────
+
 function SidebarNavItem({ item, collapsed, onClick }: {
     item: NavItem;
     collapsed: boolean;
@@ -157,13 +158,11 @@ function SidebarNavItem({ item, collapsed, onClick }: {
 // ─── Sidebar Inner ────────────────────────────────────────────────────────────
 function SidebarInner({ onNavClick }: { onNavClick?: () => void }) {
     const { collapsed, toggle } = useSidebar();
-    const navigate = useNavigate();
+    const { logout } = useAuth();
 
     const handleLogout = () => {
-        // Clear any stored tokens/session
-        localStorage.clear();
-        sessionStorage.clear();
-        navigate(APP_ROUTES.HOME);
+        logout();
+        if (onNavClick) onNavClick();
     };
 
     return (

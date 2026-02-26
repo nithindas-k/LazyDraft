@@ -9,6 +9,7 @@ interface User {
     name: string;
     email: string;
     profilePic: string;
+    isEmailVerified?: boolean;
 }
 
 interface AuthContextType {

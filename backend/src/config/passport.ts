@@ -23,11 +23,23 @@ passport.use(
                         name: profile.displayName,
                         profilePic: profile.photos?.[0].value || "",
                         refreshToken: refreshToken || "",
+                        isEmailVerified: true,
                     });
-                } else if (refreshToken) {
-                    // Update refresh token if a new one is provided
-                    user.refreshToken = refreshToken;
-                    await user.save();
+                } else {
+                    let isUpdated = false;
+                    if (refreshToken && user.refreshToken !== refreshToken) {
+                        user.refreshToken = refreshToken;
+                        isUpdated = true;
+                    }
+                    // Retroactively auto-verify existing Google users if they somehow got stuck
+                    if (!user.isEmailVerified) {
+                        user.isEmailVerified = true;
+                        isUpdated = true;
+                    }
+
+                    if (isUpdated) {
+                        await user.save();
+                    }
                 }
 
                 return done(null, user);
@@ -39,12 +51,10 @@ passport.use(
     )
 );
 
-// Serialize user into the sessions
+
 passport.serializeUser((user: any, done) => {
     done(null, user.id);
 });
-
-// Deserialize user from the sessions
 passport.deserializeUser(async (id, done) => {
     try {
         const user = await User.findById(id);

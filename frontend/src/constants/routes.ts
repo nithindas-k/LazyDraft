@@ -2,6 +2,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:50
 
 export const APP_ROUTES = {
     HOME: "/",
+    VERIFY_EMAIL: "/verify-email",
     USER: {
         DASHBOARD: "/user/dashboard",
         MAIL_SENDER: "/user/mail/sender",

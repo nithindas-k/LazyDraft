@@ -7,13 +7,16 @@ import {
     MobileTopBar,
     useSidebar,
 } from "@/components/common/AppSidebar";
+import { useAuth } from "@/contexts/AuthContext";
+import { AlertTriangle } from "lucide-react";
 
-// Inner component so it can use useSidebar context
+
 function LayoutContent() {
     const { collapsed } = useSidebar();
+    const { user } = useAuth();
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-50 flex flex-col">
             {/* Desktop sidebar */}
             <DesktopSidebar />
 
@@ -23,13 +26,23 @@ function LayoutContent() {
 
             {/* Main content — shifts right based on sidebar width */}
             <motion.main
-                className="min-h-screen"
+                className="flex-1 flex flex-col"
                 animate={{ paddingLeft: collapsed ? 64 : 240 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
-                {/* Mobile top offset */}
-                <div className="pt-14 lg:pt-0">
-                    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
+                {/* Email Verification Banner */}
+                {user && user.isEmailVerified === false && (
+                    <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 mt-14 lg:mt-0 flex items-center justify-center gap-2 shadow-sm relative z-10 w-full">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <p className="text-[13px] sm:text-sm text-amber-800 font-medium text-center">
+                            Action Required: Please verify your email address to access all features. We've sent a link to your inbox.
+                        </p>
+                    </div>
+                )}
+
+                {/* Mobile top offset applied only if banner isn't showing, otherwise handled contextually */}
+                <div className={user?.isEmailVerified === false ? "" : "pt-14 lg:pt-0"}>
+                    <div className="p-6 lg:p-8 max-w-6xl mx-auto w-full">
                         <Outlet />
                     </div>
                 </div>

@@ -65,4 +65,27 @@ router.post("/logout", (req: any, res) => {
     });
 });
 
+router.post("/verify-email", async (req: any, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) {
+            return res.status(400).json({ success: false, message: "Verification token is required" });
+        }
+
+        const user = await User.findOne({ verificationToken: token });
+        if (!user) {
+            return res.status(400).json({ success: false, message: "Invalid or expired token" });
+        }
+
+        user.isEmailVerified = true;
+        user.verificationToken = undefined;
+        await user.save();
+
+        return res.status(200).json({ success: true, message: "Email verified successfully" });
+    } catch (error) {
+        console.error("Email verification error:", error);
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
 export default router;

@@ -26,6 +26,7 @@ export const MailService = {
     },
 
     async getHistory(): Promise<{ success: boolean; data: any[] }> {
-        return axiosInstance.get(API_ENDPOINTS.MAIL.HISTORY);
+        
+        return axiosInstance.get(`${API_ENDPOINTS.MAIL.HISTORY}?t=${Date.now()}`);
     },
 };

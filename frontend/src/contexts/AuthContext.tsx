@@ -59,6 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             await axios.post(`${API_BASE_URL}/auth/logout`);
             setUser(null);
+            localStorage.removeItem("token"); 
             window.location.href = "/login";
         } catch (error) {
             console.error("Logout failed", error);

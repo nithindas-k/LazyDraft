@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, History, Zap, ArrowRight, XCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { APP_ROUTES, API_BASE_URL, API_ENDPOINTS } from "@/constants/routes";
+import { APP_ROUTES } from "@/constants/routes";
 import { useAuth } from "@/contexts/AuthContext";
-import axios from "axios";
+import { MailService } from "@/services/mail.service";
 
 const G_BLUE = "#4285F4";
 const G_GREEN = "#34A853";
@@ -22,6 +22,7 @@ interface IMailRecord {
 
 const UserDashboard: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user } = useAuth();
 
     const [stats, setStats] = useState({
@@ -30,15 +31,25 @@ const UserDashboard: React.FC = () => {
         total: "—"
     });
 
+    // Capture JWT token from URL query param after Google OAuth redirect
+    useEffect(() => {
+        const searchParams = new URLSearchParams(location.search);
+        const token = searchParams.get("token");
+        if (token) {
+            localStorage.setItem("token", token);
+            // Remove token from URL bar without reloading
+            window.history.replaceState({}, document.title, location.pathname);
+        }
+    }, []);
+
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const response = await axios.get(`${API_BASE_URL}${API_ENDPOINTS.MAIL.HISTORY}`);
-                if (response.data.success) {
-                    const emails: IMailRecord[] = response.data.data;
+                const response = await MailService.getHistory();
+                if (response.success) {
+                    const emails: IMailRecord[] = response.data;
                     const sentCount = emails.filter(e => e.status === "SENT").length;
                     const failedCount = emails.filter(e => e.status === "FAILED").length;
-
                     setStats({
                         sent: sentCount.toString(),
                         failed: failedCount.toString(),
@@ -50,7 +61,12 @@ const UserDashboard: React.FC = () => {
             }
         };
 
+        // Fetch immediately on mount
         fetchStats();
+
+        // Re-fetch whenever the window regains focus (e.g. user sent email on another page)
+        window.addEventListener("focus", fetchStats);
+        return () => window.removeEventListener("focus", fetchStats);
     }, []);
 
     const statsCards = [

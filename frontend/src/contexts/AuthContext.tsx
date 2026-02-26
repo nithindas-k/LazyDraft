@@ -17,6 +17,7 @@ interface AuthContextType {
     loading: boolean;
     loginWithGoogle: () => void;
     logout: () => void;
+    updateProfile: (name: string) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -66,8 +67,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const updateProfile = async (name: string) => {
+        try {
+            const { data } = await axios.put(`${API_BASE_URL}/auth/me`, { name });
+            if (data.success && data.user) {
+                setUser(data.user);
+                return { success: true, message: data.message || "Profile updated successfully." };
+            }
+            return { success: false, message: data.message || "Failed to update profile." };
+        } catch (error: any) {
+            console.error("Update profile failed", error);
+            return {
+                success: false,
+                message: error.response?.data?.message || "Failed to update profile."
+            };
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout }}>
+        <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout, updateProfile }}>
             {children}
         </AuthContext.Provider>
     );

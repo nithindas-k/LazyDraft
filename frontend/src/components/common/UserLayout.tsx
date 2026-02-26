@@ -5,9 +5,10 @@ import {
     DesktopSidebar,
     MobileDrawer,
     MobileTopBar,
+    DesktopTopBar,
     useSidebar,
-} from "@/components/common/AppSidebar";
-import { useAuth } from "@/contexts/AuthContext";
+} from "../../components/common/AppSidebar";
+import { useAuth } from "../../contexts/AuthContext";
 import { AlertTriangle } from "lucide-react";
 
 
@@ -29,6 +30,9 @@ function LayoutContent() {
                 className={`flex-1 flex flex-col transition-[padding] duration-300 ease-in-out ${collapsed ? "lg:pl-16" : "lg:pl-[240px]"
                     }`}
             >
+                {/* Desktop Top Bar */}
+                <DesktopTopBar />
+
                 {/* Email Verification Banner */}
                 {user && user.isEmailVerified === false && (
                     <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 mt-14 lg:mt-0 flex items-center justify-center gap-2 shadow-sm relative z-10 w-full">

@@ -11,11 +11,22 @@ import {
     Zap,
     Menu,
     X,
+    Settings,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
-import { APP_ROUTES } from "@/constants/routes";
-import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "../../lib/utils";
+import { Separator } from "../../components/ui/separator";
+import { APP_ROUTES } from "../../constants/routes";
+import { useAuth } from "../../contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useNavigate } from "react-router-dom";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface NavItem {
@@ -155,15 +166,56 @@ function SidebarNavItem({ item, collapsed, onClick }: {
     );
 }
 
+// ─── User Profile Dropdown ────────────────────────────────────────────────────
+function UserProfileDropdown({ collapsed }: { collapsed?: boolean }) {
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    if (!user) return null;
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button
+                    className={cn(
+                        "w-full flex items-center gap-2.5 rounded-xl p-1.5 text-sm text-left hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-100",
+                        collapsed ? "justify-center" : "justify-start"
+                    )}
+                >
+                    <Avatar className="w-8 h-8 shrink-0">
+                        <AvatarImage src={user.profilePic} />
+                        <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-xs ring-1 ring-blue-200">
+                            {user.name?.charAt(0)?.toUpperCase()}
+                        </AvatarFallback>
+                    </Avatar>
+                    {!collapsed && (
+                        <div className="flex-1 overflow-hidden">
+                            <p className="text-[13px] font-semibold text-slate-800 leading-tight truncate">{user.name}</p>
+                            <p className="text-[11px] text-slate-500 leading-tight truncate">{user.email}</p>
+                        </div>
+                    )}
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align={collapsed ? "start" : "start"} className="w-56 bg-white" sideOffset={12}>
+                <DropdownMenuLabel className="font-semibold text-slate-800">My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate(APP_ROUTES.USER.SETTINGS)} className="cursor-pointer py-2">
+                    <Settings className="mr-2 w-4 h-4 text-slate-500" />
+                    <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700 py-2">
+                    <LogOut className="mr-2 w-4 h-4" />
+                    <span>Log out</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
 // ─── Sidebar Inner ────────────────────────────────────────────────────────────
 function SidebarInner({ onNavClick }: { onNavClick?: () => void }) {
     const { collapsed, toggle } = useSidebar();
-    const { logout } = useAuth();
-
-    const handleLogout = () => {
-        logout();
-        if (onNavClick) onNavClick();
-    };
 
     return (
         <div className="flex flex-col h-full">
@@ -211,41 +263,10 @@ function SidebarInner({ onNavClick }: { onNavClick?: () => void }) {
                 ))}
             </nav>
 
-            {/* Bottom: Logout */}
-            <div className="px-2 pb-4 pt-3">
+            {/* Bottom: Profile Dropdown */}
+            <div className="px-2 pb-4 pt-3 mt-auto">
                 <Separator className="mb-3" />
-                <button
-                    onClick={handleLogout}
-                    className={cn(
-                        "w-full group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium",
-                        "text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
-                    )}
-                >
-                    <LogOut className="flex-shrink-0 w-5 h-5 text-slate-400 group-hover:text-red-500 transition-colors" />
-                    <AnimatePresence>
-                        {!collapsed && (
-                            <motion.span
-                                initial={{ opacity: 0, width: 0 }}
-                                animate={{ opacity: 1, width: "auto" }}
-                                exit={{ opacity: 0, width: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="overflow-hidden whitespace-nowrap"
-                            >
-                                Log out
-                            </motion.span>
-                        )}
-                    </AnimatePresence>
-                    {collapsed && (
-                        <span className="
-                            absolute left-full ml-3 px-2.5 py-1.5 text-xs font-medium
-                            bg-slate-800 text-white rounded-lg opacity-0 pointer-events-none
-                            group-hover:opacity-100 transition-opacity whitespace-nowrap z-50
-                            shadow-lg
-                        ">
-                            Log out
-                        </span>
-                    )}
-                </button>
+                <UserProfileDropdown collapsed={collapsed} />
             </div>
         </div>
     );
@@ -309,23 +330,40 @@ function DesktopSidebar() {
 function MobileTopBar() {
     const { setMobileOpen } = useSidebar();
     return (
-        <header className="lg:hidden fixed top-0 inset-x-0 z-30 h-14 bg-white border-b border-slate-100 flex items-center px-4 gap-3 shadow-sm">
-            <button
-                onClick={() => setMobileOpen(true)}
-                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
-                aria-label="Open menu"
-            >
-                <Menu className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                    <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+        <header className="lg:hidden fixed top-0 inset-x-0 z-30 h-14 bg-white border-b border-slate-100 flex items-center justify-between px-4 shadow-sm">
+            <div className="flex items-center gap-3">
+                <button
+                    onClick={() => setMobileOpen(true)}
+                    className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+                    aria-label="Open menu"
+                >
+                    <Menu className="w-5 h-5" />
+                </button>
+                <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                        <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+                    </div>
+                    <span className="font-bold text-slate-800 text-base">LazyDraft</span>
                 </div>
-                <span className="font-bold text-slate-800 text-base">LazyDraft</span>
+            </div>
+
+            <div className="scale-90 opacity-90 hover:opacity-100 -mr-2">
+                <UserProfileDropdown collapsed={true} />
+            </div>
+        </header>
+    );
+}
+
+// ─── Desktop Top Bar ──────────────────────────────────────────────────────────
+function DesktopTopBar() {
+    return (
+        <header className="hidden lg:flex sticky top-0 z-20 h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 items-center justify-end px-8 shadow-sm">
+            <div className="flex items-center gap-4">
+                <UserProfileDropdown collapsed={true} />
             </div>
         </header>
     );
 }
 
 // ─── Exports ──────────────────────────────────────────────────────────────────
-export { DesktopSidebar, MobileDrawer, MobileTopBar };
+export { DesktopSidebar, MobileDrawer, MobileTopBar, DesktopTopBar };

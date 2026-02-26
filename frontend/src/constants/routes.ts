@@ -7,6 +7,7 @@ export const APP_ROUTES = {
         DASHBOARD: "/user/dashboard",
         MAIL_SENDER: "/user/mail/sender",
         HISTORY: "/user/mail/history",
+        SETTINGS: "/user/settings",
     },
     ADMIN: {
         DASHBOARD: "/admin/dashboard",

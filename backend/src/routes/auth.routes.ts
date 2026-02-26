@@ -49,9 +49,36 @@ router.get("/me", async (req: any, res) => {
     }
 
     try {
-        const user = await User.findById(req.user._id).select("-refreshToken()");
+        const user = await User.findById(req.user._id).select("-refreshToken");
         return res.status(200).json({ success: true, user });
     } catch (error) {
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+router.put("/me", async (req: any, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ success: false, message: "Not authenticated" });
+    }
+
+    try {
+        const { name } = req.body;
+        if (!name || name.trim() === "") {
+            return res.status(400).json({ success: false, message: "Name is required" });
+        }
+
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        user.name = name.trim();
+        await user.save();
+
+        const updatedUser = await User.findById(req.user._id).select("-refreshToken");
+        return res.status(200).json({ success: true, user: updatedUser, message: "Profile updated successfully" });
+    } catch (error) {
+        console.error("Update profile error:", error);
         return res.status(500).json({ success: false, message: "Server error" });
     }
 });

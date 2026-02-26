@@ -27,7 +27,7 @@ export class MailController {
         try {
             const { to, from, subject, content, googleAccessToken } = req.body;
             const user = (req as any).user;
-            const userId = user?.id || "mock-user-id";
+            const userId = user?._id?.toString() || user?.id || "mock-user-id";
             const refreshToken = user?.refreshToken;
 
             console.log(`Controller: sendEmail request from=${from} to=${to} hasToken=${!!googleAccessToken}`);
@@ -55,7 +55,8 @@ export class MailController {
 
     getHistory = async (req: Request, res: Response): Promise<void> => {
         try {
-            const userId = (req as any).user?.id || "mock-user-id";
+            const user = (req as any).user;
+            const userId = user?._id?.toString() || user?.id || "mock-user-id";
             const history = await this.mailService.getUserEmails(userId);
             res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.SUCCESS, data: history });
         } catch (error: any) {

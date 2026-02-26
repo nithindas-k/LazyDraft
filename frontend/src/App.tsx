@@ -3,6 +3,7 @@ import { UserLayout } from "@/components/common/UserLayout";
 import UserDashboard from "@/pages/user/Dashboard";
 import MailSenderPage from "@/pages/user/MailSender";
 import HistoryPage from "@/pages/user/History";
+import SettingsPage from "@/pages/user/Settings";
 import LoginPage from "@/pages/auth/Login";
 import VerifyEmailPage from "@/pages/auth/VerifyEmail";
 import { APP_ROUTES } from "@/constants/routes";
@@ -43,6 +44,7 @@ function App() {
             <Route path={APP_ROUTES.USER.DASHBOARD} element={<UserDashboard />} />
             <Route path={APP_ROUTES.USER.MAIL_SENDER} element={<MailSenderPage />} />
             <Route path={APP_ROUTES.USER.HISTORY} element={<HistoryPage />} />
+            <Route path={APP_ROUTES.USER.SETTINGS} element={<SettingsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

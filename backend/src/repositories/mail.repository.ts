@@ -1,27 +1,74 @@
 import { IMailRepository, IMailEntity } from "../interfaces/repositories/IMailRepository";
-// import MailModel from "../models/MailModel"; // Mongoose model (to be implemented)
+import { Mail } from "../models/MailModel";
 
 export class MongoMailRepository implements IMailRepository {
     async create(mail: IMailEntity): Promise<IMailEntity> {
-      
+        const newMail = new Mail({
+            userId: mail.userId,
+            from: mail.from,
+            to: mail.to,
+            subject: mail.subject,
+            content: mail.content,
+            status: mail.status || "PENDING",
+        });
 
-        console.log("Mock Repo saving mail...", mail);
-        return { ...mail, id: "db-id-123", createdAt: new Date() };
+        const savedMail = await newMail.save();
+
+        return {
+            id: savedMail._id.toString(),
+            userId: savedMail.userId,
+            from: savedMail.from,
+            to: savedMail.to,
+            subject: savedMail.subject,
+            content: savedMail.content,
+            status: savedMail.status,
+            createdAt: savedMail.createdAt
+        };
     }
 
     async findById(id: string): Promise<IMailEntity | null> {
-        // return await MailModel.findById(id).lean();
-        return null; // Mock return
+        const mail = await Mail.findById(id).lean();
+        if (!mail) return null;
+
+        return {
+            id: mail._id.toString(),
+            userId: mail.userId,
+            from: mail.from,
+            to: mail.to,
+            subject: mail.subject,
+            content: mail.content,
+            status: mail.status,
+            createdAt: mail.createdAt
+        };
     }
 
     async findByUserId(userId: string): Promise<IMailEntity[]> {
-        // return await MailModel.find({ userId }).lean();
-        return []; // Mock return
+        const mails = await Mail.find({ userId }).sort({ createdAt: -1 }).lean();
+        return mails.map(mail => ({
+            id: mail._id.toString(),
+            userId: mail.userId,
+            from: mail.from,
+            to: mail.to,
+            subject: mail.subject,
+            content: mail.content,
+            status: mail.status,
+            createdAt: mail.createdAt
+        }));
     }
 
     async updateStatus(id: string, status: "SENT" | "FAILED" | "PENDING"): Promise<IMailEntity | null> {
-        // return await MailModel.findByIdAndUpdate(id, { status }, { new: true }).lean();
-        console.log(`Mock Repo updating status of ${id} to ${status}`);
-        return { id, userId: "user-foo", to: "test", from: "me", subject: "none", content: "bla", status };
+        const mail = await Mail.findByIdAndUpdate(id, { status }, { new: true }).lean();
+        if (!mail) return null;
+
+        return {
+            id: mail._id.toString(),
+            userId: mail.userId,
+            from: mail.from,
+            to: mail.to,
+            subject: mail.subject,
+            content: mail.content,
+            status: mail.status,
+            createdAt: mail.createdAt
+        };
     }
 }

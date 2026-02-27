@@ -8,6 +8,7 @@ export const APP_ROUTES = {
         DASHBOARD: "/user/dashboard",
         MAIL_SENDER: "/user/mail/sender",
         RECURRING_MAIL: "/user/mail/recurring",
+        SERVICES: "/user/services",
         HISTORY: "/user/mail/history",
         SETTINGS: "/user/settings",
         TEMPLATES: "/user/templates",

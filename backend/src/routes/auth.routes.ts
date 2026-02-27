@@ -15,12 +15,10 @@ function getFrontendUrl(): string {
 }
 
 async function resolveAuthenticatedUser(req: any) {
-    // Session auth (passport)
     if (req.isAuthenticated?.() && req.user?._id) {
         return User.findById(req.user._id);
     }
 
-    // JWT auth (Bearer token)
     const authHeader = req.headers?.authorization as string | undefined;
     if (authHeader?.startsWith("Bearer ")) {
         const token = authHeader.split(" ")[1];
@@ -60,7 +58,7 @@ router.get(
     })
 );
 
-// Google OAuth Callback
+
 router.get(
     "/google/callback",
     passport.authenticate("google", {

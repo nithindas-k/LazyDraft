@@ -6,6 +6,7 @@ import RecurringMailPage from "@/pages/user/RecurringMail";
 import HistoryPage from "@/pages/user/History";
 import SettingsPage from "@/pages/user/Settings";
 import TemplatesPage from "@/pages/user/Templates";
+import ServicesPage from "@/pages/user/Services";
 import LoginPage from "@/pages/auth/Login";
 import VerifyEmailPage from "@/pages/auth/VerifyEmail";
 import { APP_ROUTES } from "@/constants/routes";
@@ -47,6 +48,7 @@ function App() {
             <Route path={APP_ROUTES.USER.DASHBOARD} element={<UserDashboard />} />
             <Route path={APP_ROUTES.USER.MAIL_SENDER} element={<MailSenderPage />} />
             <Route path={APP_ROUTES.USER.RECURRING_MAIL} element={<RecurringMailPage />} />
+            <Route path={APP_ROUTES.USER.SERVICES} element={<ServicesPage />} />
             <Route path={APP_ROUTES.USER.HISTORY} element={<HistoryPage />} />
             <Route path={APP_ROUTES.USER.SETTINGS} element={<SettingsPage />} />
             <Route path={APP_ROUTES.USER.TEMPLATES} element={<TemplatesPage />} />

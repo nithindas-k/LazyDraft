@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, History, Zap, ArrowRight, XCircle } from "lucide-react";
+import { Mail, History, Zap, ArrowRight, XCircle, ConciergeBell } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { APP_ROUTES } from "@/constants/routes";
@@ -123,7 +123,7 @@ const UserDashboard: React.FC = () => {
 
             {/* Quick actions */}
             <motion.div
-                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.4 }}
@@ -159,6 +159,23 @@ const UserDashboard: React.FC = () => {
                             </p>
                         </div>
                         <ArrowRight className="w-5 h-5 shrink-0 text-slate-300 group-hover:text-green-400 group-hover:translate-x-1 transition-all" />
+                    </CardContent>
+                </Card>
+
+                {/* Services CTA */}
+                <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
+                    onClick={() => navigate(APP_ROUTES.USER.SERVICES)}>
+                    <CardContent className="p-6 flex items-center justify-between">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <ConciergeBell className="w-5 h-5" style={{ color: G_BLUE }} />
+                                <span className="font-semibold text-slate-800">Services</span>
+                            </div>
+                            <p className="text-xs text-slate-500 pr-8">
+                                Explore all available LazyDraft features in one page.
+                            </p>
+                        </div>
+                        <ArrowRight className="w-5 h-5 shrink-0 text-slate-300 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
                     </CardContent>
                 </Card>
             </motion.div>

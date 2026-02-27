@@ -14,6 +14,7 @@ import {
     Settings,
     LayoutTemplate,
     Repeat,
+    ConciergeBell,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Separator } from "../../components/ui/separator";
@@ -42,6 +43,7 @@ const NAV_ITEMS: NavItem[] = [
     { label: "Dashboard", href: APP_ROUTES.USER.DASHBOARD, icon: LayoutDashboard },
     { label: "Mail Sender", href: APP_ROUTES.USER.MAIL_SENDER, icon: Mail },
     { label: "Recurring Mail", href: APP_ROUTES.USER.RECURRING_MAIL, icon: Repeat },
+    { label: "Services", href: APP_ROUTES.USER.SERVICES, icon: ConciergeBell },
     { label: "History", href: APP_ROUTES.USER.HISTORY, icon: History },
     { label: "Templates", href: APP_ROUTES.USER.TEMPLATES, icon: LayoutTemplate },
 ];

@@ -15,7 +15,7 @@ interface User {
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    loginWithGoogle: () => void;
+    loginWithGoogle: (forceReverify?: boolean) => void;
     logout: () => void;
     updateProfile: (name: string) => Promise<{ success: boolean; message: string }>;
 }
@@ -65,12 +65,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
 
-    const loginWithGoogle = () => {
+    const loginWithGoogle = (forceReverify = false) => {
         if (!API_BASE_URL) {
             console.error("Missing VITE_API_URL in production environment");
             return;
         }
-        window.location.href = `${API_BASE_URL}/auth/google`;
+        window.location.href = forceReverify
+            ? `${API_BASE_URL}/auth/google/reverify`
+            : `${API_BASE_URL}/auth/google`;
     };
 
     const logout = async () => {

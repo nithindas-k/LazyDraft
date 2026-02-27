@@ -58,6 +58,21 @@ router.get(
     })
 );
 
+// Re-request Gmail scopes from inside the app when user denied any permission earlier.
+router.get(
+    "/google/reverify",
+    passport.authenticate("google", {
+        scope: [
+            "profile",
+            "email",
+            "https://www.googleapis.com/auth/gmail.send",
+            "https://www.googleapis.com/auth/gmail.readonly",
+        ],
+        accessType: "offline",
+        prompt: "consent select_account",
+    })
+);
+
 
 router.get(
     "/google/callback",

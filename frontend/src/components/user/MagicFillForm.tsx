@@ -225,9 +225,16 @@ function ParseDialog({ open }: { open: boolean }) {
 }
 
 // â”€â”€ Send Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-interface SendDialogProps { open: boolean; status: SendStatus; errorMessage?: string; onClose: () => void; }
+interface SendDialogProps {
+    open: boolean;
+    status: SendStatus;
+    errorMessage?: string;
+    showReverify?: boolean;
+    onReverify?: () => void;
+    onClose: () => void;
+}
 
-function SendDialog({ open, status, errorMessage, onClose }: SendDialogProps) {
+function SendDialog({ open, status, errorMessage, showReverify, onReverify, onClose }: SendDialogProps) {
     const [stepIndex, setStepIndex] = useState(0);
     const [progress, setProgress] = useState(0);
     const [showBurst, setShowBurst] = useState(false);
@@ -389,6 +396,16 @@ function SendDialog({ open, status, errorMessage, onClose }: SendDialogProps) {
                                     </DialogDescription>
                                 </div>
                                 <div className="w-full"><ShimmerBar progress={35} color={G_RED} /></div>
+                                {showReverify && onReverify && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="w-full h-9 sm:h-11 font-semibold rounded-xl sm:rounded-2xl text-sm border-blue-200 text-blue-700 hover:bg-blue-50"
+                                        onClick={onReverify}
+                                    >
+                                        <ShieldCheck className="mr-2 h-4 w-4" /> Verify Gmail Access
+                                    </Button>
+                                )}
                                 <Button className="w-full h-9 sm:h-11 font-bold text-white rounded-xl sm:rounded-2xl shadow-md text-sm"
                                     style={{ backgroundColor: G_RED }} onClick={onClose}>
                                     <RefreshCw className="mr-2 h-4 w-4" /> Try Again
@@ -410,7 +427,7 @@ const LENGTH_VALUES = ["short", "medium", "detailed"];
 
 // â”€â”€ Main Form Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const MagicFillForm: React.FC = () => {
-    const { user } = useAuth();
+    const { user, loginWithGoogle } = useAuth();
     const [magicText, setMagicText] = useState("");
     const [isParsing, setIsParsing] = useState(false);
     const [parseDialogOpen, setParseDialogOpen] = useState(false);
@@ -443,6 +460,17 @@ export const MagicFillForm: React.FC = () => {
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
     const connectedEmail = user?.email || "";
+    const shouldOfferReverify = (message: string) => {
+        const m = (message || "").toLowerCase();
+        return (
+            m.includes("gmail vendor failed") ||
+            m.includes("insufficient") ||
+            m.includes("permission") ||
+            m.includes("not granted") ||
+            m.includes("access token") ||
+            m.includes("invalid_grant")
+        );
+    };
 
     const form = useForm<MailFormValues>({
         resolver: zodResolver(mailSchema),
@@ -569,7 +597,14 @@ export const MagicFillForm: React.FC = () => {
     return (
         <>
             <ParseDialog open={parseDialogOpen} />
-            <SendDialog open={dialogOpen} status={sendStatus} errorMessage={sendError} onClose={closeDialog} />
+            <SendDialog
+                open={dialogOpen}
+                status={sendStatus}
+                errorMessage={sendError}
+                showReverify={sendStatus === "error" && shouldOfferReverify(sendError)}
+                onReverify={() => loginWithGoogle(true)}
+                onClose={closeDialog}
+            />
             <EmailPreviewSheet
                 open={showPreview} onClose={() => setShowPreview(false)}
                 from={watchedValues.from} to={watchedValues.to}

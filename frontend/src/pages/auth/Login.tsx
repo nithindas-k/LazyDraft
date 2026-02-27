@@ -132,7 +132,7 @@ const LoginPage: React.FC = () => {
 
                             {/* Google Sign In Button */}
                             <Button
-                                onClick={loginWithGoogle}
+                                onClick={() => loginWithGoogle()}
                                 disabled={loading}
                                 className="w-full h-12 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-3 font-medium text-base rounded-xl group relative overflow-hidden"
                             >

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { APP_ROUTES } from "@/constants/routes";
 
 const LoginPage: React.FC = () => {
     const { user, loading, loginWithGoogle } = useAuth();
@@ -159,7 +161,15 @@ const LoginPage: React.FC = () => {
                             </Button>
 
                             <div className="mt-8 text-center text-xs text-slate-400">
-                                By signing in, you agree to our Terms of Service and Privacy Policy.
+                                By signing in, you agree to our{" "}
+                                <Link to={APP_ROUTES.TERMS} className="text-slate-600 hover:text-slate-900 underline underline-offset-2">
+                                    Terms of Service
+                                </Link>{" "}
+                                and{" "}
+                                <Link to={APP_ROUTES.PRIVACY} className="text-slate-600 hover:text-slate-900 underline underline-offset-2">
+                                    Privacy Policy
+                                </Link>
+                                .
                             </div>
                         </CardContent>
                     </Card>

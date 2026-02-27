@@ -3,6 +3,8 @@ export const API_BASE_URL = configuredApiBase || (import.meta.env.DEV ? "http://
 
 export const APP_ROUTES = {
     HOME: "/",
+    PRIVACY: "/privacy",
+    TERMS: "/terms",
     VERIFY_EMAIL: "/verify-email",
     USER: {
         DASHBOARD: "/user/dashboard",

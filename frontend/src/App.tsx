@@ -9,6 +9,8 @@ import TemplatesPage from "@/pages/user/Templates";
 import ServicesPage from "@/pages/user/Services";
 import LoginPage from "@/pages/auth/Login";
 import VerifyEmailPage from "@/pages/auth/VerifyEmail";
+import PrivacyPage from "@/pages/public/Privacy";
+import TermsPage from "@/pages/public/Terms";
 import { APP_ROUTES } from "@/constants/routes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
@@ -38,6 +40,8 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path={APP_ROUTES.PRIVACY} element={<PrivacyPage />} />
+          <Route path={APP_ROUTES.TERMS} element={<TermsPage />} />
           <Route path={APP_ROUTES.VERIFY_EMAIL} element={<VerifyEmailPage />} />
 
           {/* Redirect root to user dashboard */}

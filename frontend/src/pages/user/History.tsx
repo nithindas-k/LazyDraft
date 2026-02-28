@@ -5,6 +5,9 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MailService } from "@/services/mail.service";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 // ── Google brand colours ──────────────────────────────────────────────────────
 const G_BLUE = "#4285F4";
@@ -252,6 +255,11 @@ const HistoryPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selected, setSelected] = useState<IMailRecord | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState<"ALL" | "SENT" | "FAILED" | "PENDING">("ALL");
+    const [engagementFilter, setEngagementFilter] = useState<"ALL" | "OPENED" | "REPLIED" | "NONE">("ALL");
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
 
     const fetchHistory = async () => {
         try {
@@ -281,6 +289,31 @@ const HistoryPage: React.FC = () => {
         hydrateReplies();
     }, []);
 
+    const filteredEmails = emails.filter((email) => {
+        const text = `${email.to} ${email.subject} ${stripHtml(email.content)}`.toLowerCase();
+        const searchOk = !searchQuery.trim() || text.includes(searchQuery.trim().toLowerCase());
+        const statusOk = statusFilter === "ALL" || email.status === statusFilter;
+
+        let engagementOk = true;
+        if (engagementFilter === "OPENED") engagementOk = !!email.openedAt;
+        if (engagementFilter === "REPLIED") engagementOk = !!email.repliedAt;
+        if (engagementFilter === "NONE") engagementOk = !email.openedAt && !email.repliedAt;
+
+        const created = new Date(email.createdAt).getTime();
+        const fromOk = !dateFrom || created >= new Date(`${dateFrom}T00:00:00`).getTime();
+        const toOk = !dateTo || created <= new Date(`${dateTo}T23:59:59`).getTime();
+
+        return searchOk && statusOk && engagementOk && fromOk && toOk;
+    });
+
+    const clearFilters = () => {
+        setSearchQuery("");
+        setStatusFilter("ALL");
+        setEngagementFilter("ALL");
+        setDateFrom("");
+        setDateTo("");
+    };
+
     return (
         <>
             {selected && <MailDetailModal email={selected} onClose={() => setSelected(null)} />}
@@ -298,6 +331,54 @@ const HistoryPage: React.FC = () => {
                     <p className="text-slate-500 text-sm">All emails you've sent through LazyDraft, including open/reply status.</p>
                 </motion.div>
 
+                <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25 }}
+                >
+                    <Card className="border-0 shadow-sm">
+                        <CardContent className="p-4 sm:p-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+                                <Input
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search by recipient, subject, content..."
+                                    className="xl:col-span-2"
+                                />
+                                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "ALL" | "SENT" | "FAILED" | "PENDING")}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL">All Status</SelectItem>
+                                        <SelectItem value="SENT">Sent</SelectItem>
+                                        <SelectItem value="FAILED">Failed</SelectItem>
+                                        <SelectItem value="PENDING">Pending</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Select value={engagementFilter} onValueChange={(v) => setEngagementFilter(v as "ALL" | "OPENED" | "REPLIED" | "NONE")}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Engagement" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL">All Engagement</SelectItem>
+                                        <SelectItem value="OPENED">Opened</SelectItem>
+                                        <SelectItem value="REPLIED">Replied</SelectItem>
+                                        <SelectItem value="NONE">No Engagement</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Button type="button" variant="outline" onClick={clearFilters}>
+                                    Clear
+                                </Button>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+                                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
                 <AnimatePresence mode="wait">
                     {loading ? (
                         <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -310,7 +391,7 @@ const HistoryPage: React.FC = () => {
                             className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 shadow-sm text-center">
                             {error}
                         </motion.div>
-                    ) : emails.length === 0 ? (
+                    ) : filteredEmails.length === 0 ? (
                         <motion.div key="empty" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }}>
                             <Card className="border-0 shadow-sm">
                                 <CardContent className="flex flex-col items-center justify-center py-24 gap-4 text-center">
@@ -328,7 +409,7 @@ const HistoryPage: React.FC = () => {
                         </motion.div>
                     ) : (
                         <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 gap-3">
-                            {emails.map((email, index) => {
+                            {filteredEmails.map((email, index) => {
                                 const cfg = STATUS_CONFIG[email.status] || STATUS_CONFIG.PENDING;
                                 const { Icon: StatusIcon } = cfg;
                                 const plainPreview = stripHtml(email.content);

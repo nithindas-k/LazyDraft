@@ -67,6 +67,8 @@ export interface AutoReplyInboundItem {
     createdAt: string;
     autoReplyStatus?: "SKIPPED" | "DRAFTED" | "SENT" | "BLOCKED";
     autoReplyReason?: string;
+    intentTag?: "Complaint" | "Inquiry" | "Follow-up" | "Spam-like";
+    intentConfidence?: number;
 }
 
 export interface AutoReplyMailDetails {
@@ -78,6 +80,8 @@ export interface AutoReplyMailDetails {
         content: string;
         autoReplyStatus?: "SKIPPED" | "DRAFTED" | "SENT" | "BLOCKED";
         autoReplyReason?: string;
+        intentTag?: "Complaint" | "Inquiry" | "Follow-up" | "Spam-like";
+        intentConfidence?: number;
         createdAt: string;
     };
     autoReply: {

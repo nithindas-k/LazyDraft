@@ -6,6 +6,8 @@ import { MailService, type AutoReplyInboundItem, type AutoReplyMailDetails } fro
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Loader2,
   RefreshCw,
@@ -30,6 +32,13 @@ const inboundStatusColorMap: Record<string, string> = {
   SENT: "bg-emerald-50 text-emerald-700 border-emerald-200",
   BLOCKED: "bg-rose-50 text-rose-700 border-rose-200",
   SKIPPED: "bg-slate-100 text-slate-700 border-slate-200",
+};
+
+const intentColorMap: Record<string, string> = {
+  Complaint: "bg-rose-50 text-rose-700 border-rose-200",
+  Inquiry: "bg-blue-50 text-blue-700 border-blue-200",
+  "Follow-up": "bg-violet-50 text-violet-700 border-violet-200",
+  "Spam-like": "bg-orange-50 text-orange-700 border-orange-200",
 };
 
 const outboundStatusColorMap: Record<string, string> = {
@@ -96,6 +105,8 @@ function MailDetailsModal({
   const inboundFrom = inbound?.from || "-";
   const inboundTo = (details?.inbound as any)?.to || "-";
   const inboundStatus = inbound?.autoReplyStatus || "SKIPPED";
+  const intentTag = (inbound as any)?.intentTag;
+  const intentConfidence = Number((inbound as any)?.intentConfidence);
 
   return (
     <AnimatePresence>
@@ -140,6 +151,12 @@ function MailDetailsModal({
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              {intentTag ? (
+                <span className={`hidden sm:flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${intentColorMap[intentTag] || "bg-slate-100 text-slate-700 border-slate-200"}`}>
+                  {intentTag}
+                  {Number.isFinite(intentConfidence) ? ` ${Math.round(intentConfidence * 100)}%` : ""}
+                </span>
+              ) : null}
               <span className={`hidden sm:flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${inboundStatusColorMap[inboundStatus] || inboundStatusColorMap.SKIPPED}`}>
                 {inboundStatus}
               </span>
@@ -194,6 +211,16 @@ function MailDetailsModal({
                         </div>
                       </div>
                     </div>
+                    {intentTag ? (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${intentColorMap[intentTag] || "bg-slate-100 text-slate-700 border-slate-200"}`}>
+                          Intent: {intentTag}
+                        </span>
+                        {Number.isFinite(intentConfidence) ? (
+                          <span className="text-xs text-slate-500">Confidence: {Math.round(intentConfidence * 100)}%</span>
+                        ) : null}
+                      </div>
+                    ) : null}
                     <div className="rounded-xl border border-slate-200 bg-white p-3">
                       <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-2">Message</p>
                       <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{toPlainText(inbound?.content)}</p>
@@ -264,6 +291,12 @@ const AutoReplyInboxPage: React.FC = () => {
   const [details, setDetails] = useState<AutoReplyMailDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [settings, setSettings] = useState<AutoReplySettings | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sectionFilter, setSectionFilter] = useState<"ALL" | "PENDING" | "PROCESSED">("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "DRAFTED" | "SENT" | "BLOCKED" | "SKIPPED">("ALL");
+  const [intentFilter, setIntentFilter] = useState<"ALL" | "Complaint" | "Inquiry" | "Follow-up" | "Spam-like">("ALL");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const loadSettings = async () => {
     try {
@@ -301,6 +334,39 @@ const AutoReplyInboxPage: React.FC = () => {
 
   const pendingManual = useMemo(() => items.filter((i) => i.autoReplyStatus === "DRAFTED"), [items]);
   const processedItems = useMemo(() => items.filter((i) => i.autoReplyStatus !== "DRAFTED"), [items]);
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const query = searchQuery.trim().toLowerCase();
+      const plain = toPlainText(item.content).toLowerCase();
+      const text = `${item.from} ${item.subject} ${plain}`.toLowerCase();
+      const searchOk = !query || text.includes(query);
+
+      const statusOk = statusFilter === "ALL" || (item.autoReplyStatus || "SKIPPED") === statusFilter;
+      const intentOk = intentFilter === "ALL" || item.intentTag === intentFilter;
+
+      const created = new Date(item.createdAt).getTime();
+      const fromOk = !dateFrom || created >= new Date(`${dateFrom}T00:00:00`).getTime();
+      const toOk = !dateTo || created <= new Date(`${dateTo}T23:59:59`).getTime();
+
+      const sectionOk =
+        sectionFilter === "ALL" ||
+        (sectionFilter === "PENDING" && item.autoReplyStatus === "DRAFTED") ||
+        (sectionFilter === "PROCESSED" && item.autoReplyStatus !== "DRAFTED");
+
+      return searchOk && statusOk && intentOk && fromOk && toOk && sectionOk;
+    });
+  }, [items, searchQuery, statusFilter, intentFilter, dateFrom, dateTo, sectionFilter]);
+  const filteredPending = filteredItems.filter((i) => i.autoReplyStatus === "DRAFTED");
+  const filteredProcessed = filteredItems.filter((i) => i.autoReplyStatus !== "DRAFTED");
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSectionFilter("ALL");
+    setStatusFilter("ALL");
+    setIntentFilter("ALL");
+    setDateFrom("");
+    setDateTo("");
+  };
 
   const openDetails = async (item: AutoReplyInboundItem) => {
     setSelected(item);
@@ -358,6 +424,60 @@ const AutoReplyInboxPage: React.FC = () => {
           </Button>
         </div>
 
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4 sm:p-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3">
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by sender, subject, content..."
+                className="xl:col-span-2"
+              />
+              <Select value={sectionFilter} onValueChange={(v) => setSectionFilter(v as "ALL" | "PENDING" | "PROCESSED")}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Section" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Sections</SelectItem>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="PROCESSED">Processed</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "ALL" | "DRAFTED" | "SENT" | "BLOCKED" | "SKIPPED")}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Status</SelectItem>
+                  <SelectItem value="DRAFTED">Drafted</SelectItem>
+                  <SelectItem value="SENT">Sent</SelectItem>
+                  <SelectItem value="BLOCKED">Blocked</SelectItem>
+                  <SelectItem value="SKIPPED">Skipped</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={intentFilter} onValueChange={(v) => setIntentFilter(v as "ALL" | "Complaint" | "Inquiry" | "Follow-up" | "Spam-like")}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Intent" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Intents</SelectItem>
+                  <SelectItem value="Complaint">Complaint</SelectItem>
+                  <SelectItem value="Inquiry">Inquiry</SelectItem>
+                  <SelectItem value="Follow-up">Follow-up</SelectItem>
+                  <SelectItem value="Spam-like">Spam-like</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button type="button" variant="outline" onClick={clearFilters}>
+                Clear
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+            </div>
+          </CardContent>
+        </Card>
+
         {settings && !settings.autoReplyEnabled ? (
           <Card className="border-amber-200 bg-amber-50">
             <CardHeader>
@@ -379,28 +499,35 @@ const AutoReplyInboxPage: React.FC = () => {
           <Card className="border-slate-200">
             <CardHeader className="pb-2">
               <CardTitle className="text-base text-slate-800">Pending Approval</CardTitle>
-              <CardDescription>{pendingManual.length} inbound mail(s) waiting for manual approval.</CardDescription>
+              <CardDescription>{filteredPending.length} inbound mail(s) waiting for manual approval.</CardDescription>
             </CardHeader>
             <CardContent className="pt-2">
               {loading ? (
                 <div className="py-8 flex items-center justify-center text-slate-500">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading inbox...
                 </div>
-              ) : pendingManual.length === 0 ? (
+              ) : filteredPending.length === 0 ? (
                 <div className="py-10 text-center text-slate-500 text-sm">No pending approvals right now.</div>
               ) : (
                 <div className="space-y-3">
-                  {pendingManual.map((item) => (
+                  {filteredPending.map((item) => (
                     <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 flex flex-col gap-3">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 truncate">{item.subject || "(No Subject)"}</p>
-                          <p className="text-xs text-slate-500 truncate mt-0.5">From: {item.from}</p>
-                        </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{item.subject || "(No Subject)"}</p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">From: {item.from}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {item.intentTag ? (
+                          <Badge className={`border ${intentColorMap[item.intentTag] || "bg-slate-100 text-slate-700 border-slate-200"}`}>
+                            {item.intentTag}
+                          </Badge>
+                        ) : null}
                         <Badge className={`border ${inboundStatusColorMap[item.autoReplyStatus || "SKIPPED"] || inboundStatusColorMap.SKIPPED}`}>
                           {item.autoReplyStatus || "SKIPPED"}
                         </Badge>
                       </div>
+                    </div>
 
                       <p className="text-sm text-slate-600 max-h-10 overflow-hidden">{toPlainText(item.content)}</p>
 
@@ -443,28 +570,35 @@ const AutoReplyInboxPage: React.FC = () => {
           <Card className="border-slate-200">
             <CardHeader className="pb-2">
               <CardTitle className="text-base text-slate-800">Processed</CardTitle>
-              <CardDescription>{processedItems.length} item(s) handled by safety rules or auto-send.</CardDescription>
+              <CardDescription>{filteredProcessed.length} item(s) handled by safety rules or auto-send.</CardDescription>
             </CardHeader>
             <CardContent className="pt-2">
               {loading ? (
                 <div className="py-6 flex items-center justify-center text-slate-500">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading processed mails...
                 </div>
-              ) : processedItems.length === 0 ? (
+              ) : filteredProcessed.length === 0 ? (
                 <div className="py-8 text-center text-slate-500 text-sm">No processed items yet.</div>
               ) : (
                 <div className="space-y-3">
-                  {processedItems.map((item) => (
+                  {filteredProcessed.map((item) => (
                     <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 flex flex-col gap-3">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 truncate">{item.subject || "(No Subject)"}</p>
-                          <p className="text-xs text-slate-500 truncate mt-0.5">From: {item.from}</p>
-                        </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{item.subject || "(No Subject)"}</p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">From: {item.from}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {item.intentTag ? (
+                          <Badge className={`border ${intentColorMap[item.intentTag] || "bg-slate-100 text-slate-700 border-slate-200"}`}>
+                            {item.intentTag}
+                          </Badge>
+                        ) : null}
                         <Badge className={`border ${inboundStatusColorMap[item.autoReplyStatus || "SKIPPED"] || inboundStatusColorMap.SKIPPED}`}>
                           {item.autoReplyStatus || "SKIPPED"}
                         </Badge>
                       </div>
+                    </div>
                       <p className="text-sm text-slate-600 max-h-10 overflow-hidden">{toPlainText(item.content)}</p>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div className="text-xs text-slate-500">{item.autoReplyReason || "No extra reason available."}</div>

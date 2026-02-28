@@ -4,6 +4,7 @@ import { IAIService } from "../interfaces/services/IAIService";
 import { IAutoReplyRepository } from "../interfaces/repositories/IAutoReplyRepository";
 import { IAutoReplyService, IAutoReplySettings, IAutoReplyUpdateInput } from "../interfaces/services/IAutoReplyService";
 import { GmailVendor, IGmailInboundMessage } from "../vendors/GmailVendor";
+import { IAutoReplyIntentTag } from "../interfaces/services/IAIService";
 
 export class AutoReplyService implements IAutoReplyService {
     constructor(
@@ -77,8 +78,8 @@ export class AutoReplyService implements IAutoReplyService {
             subject: inbound.subject,
             body: inbound.content,
             sender: inbound.from,
-            tone: "Professional",
-            policy: "This is a manually approved reply. Be clear and concise.",
+            tone: this.intentToTone(inbound.intentTag || "Inquiry"),
+            policy: `${this.intentToPolicy(inbound.intentTag || "Inquiry")} This is a manually approved reply.`,
         });
         const withSignature = this.appendSignature(generated, user.autoReplySignature || "");
 
@@ -173,6 +174,8 @@ export class AutoReplyService implements IAutoReplyService {
         const existing = await this.autoReplyRepository.findByProviderMessageId(message.id, userId);
         if (existing) return false;
 
+        const intentResult = await this.aiService.classifyAutoReplyIntent(message.subject || "", message.body || "", message.from);
+
         const inbound = await this.autoReplyRepository.create({
             userId,
             from: message.from,
@@ -184,6 +187,8 @@ export class AutoReplyService implements IAutoReplyService {
             providerMessageId: message.id,
             providerThreadId: message.threadId,
             inReplyTo: message.inReplyTo,
+            intentTag: intentResult.intent,
+            intentConfidence: intentResult.confidence,
             createdAt: new Date(message.date || Date.now()),
         });
 
@@ -192,6 +197,11 @@ export class AutoReplyService implements IAutoReplyService {
         const safetyReason = await this.getSafetyBlockReason(userId, userEmail, cooldownMinutes, message);
         if (safetyReason) {
             await this.autoReplyRepository.updateAutoReplyResult(inbound.id, "BLOCKED", safetyReason);
+            return true;
+        }
+
+        if (intentResult.intent === "Spam-like") {
+            await this.autoReplyRepository.updateAutoReplyResult(inbound.id, "BLOCKED", `Intent blocked: Spam-like (${intentResult.reason || "AI classified as spam-like"})`);
             return true;
         }
 
@@ -206,8 +216,8 @@ export class AutoReplyService implements IAutoReplyService {
                 subject: message.subject,
                 body: message.body,
                 sender: message.from,
-                tone: "Professional",
-                policy: "Do not include legal, medical, or financial advice. Ask one clarification if required.",
+                tone: this.intentToTone(intentResult.intent),
+                policy: this.intentToPolicy(intentResult.intent),
             }),
             signature
         );
@@ -228,7 +238,11 @@ export class AutoReplyService implements IAutoReplyService {
         });
 
         if (mode === "manual") {
-            await this.autoReplyRepository.updateAutoReplyResult(inbound.id, "DRAFTED", "Awaiting manual approval");
+            await this.autoReplyRepository.updateAutoReplyResult(
+                inbound.id,
+                "DRAFTED",
+                `Awaiting manual approval (${intentResult.intent}, ${Math.round(intentResult.confidence * 100)}%)`
+            );
             return true;
         }
 
@@ -283,5 +297,25 @@ export class AutoReplyService implements IAutoReplyService {
         if (!cleanSig) return html;
         const safeSig = cleanSig.replace(/\n/g, "<br/>");
         return `${html}<p><br/>${safeSig}</p>`;
+    }
+
+    private intentToTone(intent: IAutoReplyIntentTag): string {
+        if (intent === "Complaint") return "Calm, empathetic, solution-focused";
+        if (intent === "Follow-up") return "Professional and proactive";
+        if (intent === "Inquiry") return "Helpful and concise";
+        return "Neutral and careful";
+    }
+
+    private intentToPolicy(intent: IAutoReplyIntentTag): string {
+        if (intent === "Complaint") {
+            return "Acknowledge concern, apologize briefly, avoid blame, propose next step. Do not admit legal liability.";
+        }
+        if (intent === "Follow-up") {
+            return "Acknowledge prior context and give a clear update or request one missing detail.";
+        }
+        if (intent === "Inquiry") {
+            return "Provide a clear direct answer. If unclear, ask one short clarification question.";
+        }
+        return "Do not engage in promotional/spam-like content.";
     }
 }

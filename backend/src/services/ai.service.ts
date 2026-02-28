@@ -1,5 +1,5 @@
 import Groq from "groq-sdk";
-import { IAIService, IAIParsedMail, IAutoReplyInput } from "../interfaces/services/IAIService";
+import { IAIService, IAIParsedMail, IAutoReplyInput, IAutoReplyIntentResult } from "../interfaces/services/IAIService";
 
 const WORD_COUNT_MAP: Record<string, number> = { short: 100, medium: 200, detailed: 400 };
 
@@ -170,5 +170,82 @@ Return only HTML for the reply body.`;
             console.error("Auto reply generation failed:", error);
             return "<p>Hello,</p><p>Thank you for your email. I will review your message and get back to you shortly.</p><p>Best regards,</p>";
         }
+    }
+
+    async classifyAutoReplyIntent(subject: string, body: string, sender?: string): Promise<IAutoReplyIntentResult> {
+        const fallback = this.heuristicIntent(subject, body, sender);
+        try {
+            const prompt = `Classify this inbound email into exactly one intent:
+- Complaint
+- Inquiry
+- Follow-up
+- Spam-like
+
+Return ONLY valid JSON:
+{
+  "intent": "Complaint|Inquiry|Follow-up|Spam-like",
+  "confidence": 0.0 to 1.0,
+  "reason": "short reason"
+}
+
+Sender: ${sender || ""}
+Subject: ${subject || ""}
+Body:
+${(body || "").slice(0, 4000)}
+`;
+
+            const completion = await this.groq.chat.completions.create({
+                messages: [{ role: "user", content: prompt }],
+                model: this.model,
+                temperature: 0.1,
+                response_format: { type: "json_object" },
+            });
+
+            const raw = completion.choices[0]?.message?.content || "{}";
+            const parsed = JSON.parse(raw || "{}");
+            const intent = this.normalizeIntent(parsed?.intent);
+            if (!intent) return fallback;
+
+            const confidence = Number(parsed?.confidence);
+            return {
+                intent,
+                confidence: Number.isFinite(confidence) ? Math.min(1, Math.max(0, confidence)) : fallback.confidence,
+                reason: typeof parsed?.reason === "string" ? parsed.reason.slice(0, 160) : fallback.reason,
+            };
+        } catch (error) {
+            console.error("Intent classification failed:", error);
+            return fallback;
+        }
+    }
+
+    private normalizeIntent(v?: string): IAutoReplyIntentResult["intent"] | null {
+        const value = (v || "").trim().toLowerCase();
+        if (value === "complaint") return "Complaint";
+        if (value === "inquiry") return "Inquiry";
+        if (value === "follow-up" || value === "follow up" || value === "followup") return "Follow-up";
+        if (value === "spam-like" || value === "spam like" || value === "spam") return "Spam-like";
+        return null;
+    }
+
+    private heuristicIntent(subject: string, body: string, sender?: string): IAutoReplyIntentResult {
+        const text = `${subject || ""} ${body || ""}`.toLowerCase();
+        const senderLower = (sender || "").toLowerCase();
+
+        const spamSignals = ["unsubscribe", "click here", "limited offer", "win now", "lottery", "crypto giveaway", "free money", "noreply"];
+        if (spamSignals.some((w) => text.includes(w)) || senderLower.includes("no-reply") || senderLower.includes("noreply")) {
+            return { intent: "Spam-like", confidence: 0.7, reason: "Promotional/spam-like language detected" };
+        }
+
+        const complaintSignals = ["not working", "issue", "problem", "refund", "angry", "bad", "delay", "frustrated", "complaint"];
+        if (complaintSignals.some((w) => text.includes(w))) {
+            return { intent: "Complaint", confidence: 0.65, reason: "Issue/complaint wording detected" };
+        }
+
+        const followUpSignals = ["following up", "follow up", "any update", "reminder", "checking in", "still waiting"];
+        if (followUpSignals.some((w) => text.includes(w))) {
+            return { intent: "Follow-up", confidence: 0.65, reason: "Follow-up phrasing detected" };
+        }
+
+        return { intent: "Inquiry", confidence: 0.6, reason: "Default informational inquiry" };
     }
 }

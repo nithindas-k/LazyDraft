@@ -332,8 +332,6 @@ const AutoReplyInboxPage: React.FC = () => {
     bootstrap();
   }, []);
 
-  const pendingManual = useMemo(() => items.filter((i) => i.autoReplyStatus === "DRAFTED"), [items]);
-  const processedItems = useMemo(() => items.filter((i) => i.autoReplyStatus !== "DRAFTED"), [items]);
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       const query = searchQuery.trim().toLowerCase();

@@ -352,7 +352,7 @@ function MobileTopBar() {
                     <img
                         src="/LazyDraft.png"
                         alt="LazyDraft logo"
-                        className="w-8 h-8 object-contain rounded-lg"
+                        className="w-18 h-18 object-contain rounded-lg"
                     />
                     <span className="font-bold text-slate-800 text-base">LazyDraft</span>
                 </div>

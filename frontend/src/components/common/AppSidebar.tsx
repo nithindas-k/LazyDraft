@@ -8,7 +8,6 @@ import {
     LogOut,
     ChevronLeft,
     ChevronRight,
-    Zap,
     Menu,
     X,
     Settings,
@@ -85,20 +84,26 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
 function SidebarLogo({ collapsed }: { collapsed: boolean }) {
     return (
         <div className="flex items-center gap-2.5 px-4 h-16">
-            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
-                <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
-            </div>
+            <img
+                src="/LazyDraftBgremoved.png"
+                alt="LazyDraft logo"
+                className="flex-shrink-0 w-8 h-8 object-contain"
+            />
             <AnimatePresence>
                 {!collapsed && (
-                    <motion.span
+                    <motion.div
                         initial={{ opacity: 0, width: 0 }}
                         animate={{ opacity: 1, width: "auto" }}
                         exit={{ opacity: 0, width: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="font-bold text-slate-800 text-lg tracking-tight overflow-hidden whitespace-nowrap"
+                        className="overflow-hidden whitespace-nowrap flex items-center"
                     >
-                        LazyDraft
-                    </motion.span>
+                        <img
+                            src="/LazyDraft.png"
+                            alt="LazyDraft"
+                            className="h-7 w-auto object-contain"
+                        />
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>
@@ -348,10 +353,16 @@ function MobileTopBar() {
                     <Menu className="w-5 h-5" />
                 </button>
                 <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                        <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
-                    </div>
-                    <span className="font-bold text-slate-800 text-base">LazyDraft</span>
+                    <img
+                        src="/LazyDraftBgremoved.png"
+                        alt="LazyDraft logo"
+                        className="w-6 h-6 object-contain"
+                    />
+                    <img
+                        src="/LazyDraft.png"
+                        alt="LazyDraft"
+                        className="h-6 w-auto object-contain"
+                    />
                 </div>
             </div>
 

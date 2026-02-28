@@ -3,9 +3,11 @@ import { MailService, type AutoReplyInboundItem } from "@/services/mail.service"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCw, CheckCircle2, XCircle, MailOpen } from "lucide-react";
+import { Loader2, RefreshCw, CheckCircle2, XCircle, MailOpen, Settings } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { useNavigate } from "react-router-dom";
+import { APP_ROUTES } from "@/constants/routes";
 
 const statusColorMap: Record<string, string> = {
   DRAFTED: "bg-amber-50 text-amber-700 border-amber-200",
@@ -14,13 +16,51 @@ const statusColorMap: Record<string, string> = {
   SKIPPED: "bg-slate-100 text-slate-700 border-slate-200",
 };
 
+const toPlainText = (html?: string): string => {
+  if (!html) return "-";
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    doc.querySelectorAll("style,script,noscript").forEach((node) => node.remove());
+    const text = doc.body.textContent || "";
+    return text.replace(/\s+/g, " ").trim() || "-";
+  } catch {
+    return html
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim() || "-";
+  }
+};
+
+type AutoReplySettings = {
+  autoReplyEnabled: boolean;
+  autoReplyMode: "manual" | "auto";
+  autoReplySignature: string;
+  autoReplyCooldownMinutes: number;
+};
+
 const AutoReplyInboxPage: React.FC = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState<AutoReplyInboundItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<AutoReplyInboundItem | null>(null);
+  const [settings, setSettings] = useState<AutoReplySettings | null>(null);
 
-  const load = async () => {
+  const loadSettings = async () => {
+    try {
+      const res = await MailService.getAutoReplySettings();
+      if (res.success) {
+        setSettings(res.data);
+      }
+    } catch {
+      setSettings(null);
+    }
+  };
+
+  const loadInbox = async () => {
     setLoading(true);
     try {
       const res = await MailService.getAutoReplyInbound(60);
@@ -38,11 +78,19 @@ const AutoReplyInboxPage: React.FC = () => {
   };
 
   useEffect(() => {
-    load();
+    const bootstrap = async () => {
+      await loadSettings();
+      await loadInbox();
+    };
+    bootstrap();
   }, []);
 
   const pendingManual = useMemo(
     () => items.filter((i) => i.autoReplyStatus === "DRAFTED"),
+    [items]
+  );
+  const processedItems = useMemo(
+    () => items.filter((i) => i.autoReplyStatus !== "DRAFTED"),
     [items]
   );
 
@@ -50,7 +98,7 @@ const AutoReplyInboxPage: React.FC = () => {
     setActionLoadingId(id);
     try {
       await MailService.approveAutoReply(id);
-      await load();
+      await loadInbox();
     } finally {
       setActionLoadingId(null);
     }
@@ -60,7 +108,7 @@ const AutoReplyInboxPage: React.FC = () => {
     setActionLoadingId(id);
     try {
       await MailService.rejectAutoReply(id, "Rejected from review inbox");
-      await load();
+      await loadInbox();
     } finally {
       setActionLoadingId(null);
     }
@@ -72,15 +120,37 @@ const AutoReplyInboxPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Auto Reply Inbox</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Review inbound mails, approve drafts, or block replies.
+            Review incoming mails in a clean format and approve pending auto-replies.
           </p>
         </div>
-        <Button type="button" variant="outline" onClick={load} disabled={loading} className="w-full sm:w-auto">
+        <Button type="button" variant="outline" onClick={loadInbox} disabled={loading} className="w-full sm:w-auto">
           {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
           Refresh
         </Button>
       </div>
 
+      {settings && !settings.autoReplyEnabled ? (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardHeader>
+            <CardTitle className="text-base text-amber-900">Auto Reply is currently OFF</CardTitle>
+            <CardDescription className="text-amber-800">
+              To see and process mails here, please enable Auto Reply in Settings.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              type="button"
+              onClick={() => navigate(APP_ROUTES.USER.SETTINGS)}
+              className="bg-[#4285F4] hover:opacity-90 text-white w-full sm:w-auto"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Go to Settings
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {settings && !settings.autoReplyEnabled ? null : (
       <Card className="border-slate-200">
         <CardHeader className="pb-2">
           <CardTitle className="text-base text-slate-800">Pending Approval</CardTitle>
@@ -91,11 +161,11 @@ const AutoReplyInboxPage: React.FC = () => {
             <div className="py-8 flex items-center justify-center text-slate-500">
               <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading inbox...
             </div>
-          ) : items.length === 0 ? (
-            <div className="py-10 text-center text-slate-500 text-sm">No inbound mails found yet.</div>
+          ) : pendingManual.length === 0 ? (
+            <div className="py-10 text-center text-slate-500 text-sm">No pending approvals right now.</div>
           ) : (
             <div className="space-y-3">
-              {items.map((item) => (
+              {pendingManual.map((item) => (
                 <div
                   key={item.id}
                   className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 flex flex-col gap-3"
@@ -110,7 +180,7 @@ const AutoReplyInboxPage: React.FC = () => {
                     </Badge>
                   </div>
 
-                  <p className="text-sm text-slate-600 max-h-10 overflow-hidden">{item.content?.replace(/<[^>]+>/g, " ") || "-"}</p>
+                  <p className="text-sm text-slate-600 max-h-10 overflow-hidden">{toPlainText(item.content)}</p>
 
                   <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
                     <button
@@ -152,6 +222,48 @@ const AutoReplyInboxPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+      )}
+
+      {settings && !settings.autoReplyEnabled ? null : (
+        <Card className="border-slate-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base text-slate-800">Processed</CardTitle>
+            <CardDescription>{processedItems.length} item(s) already handled by safety rules or auto-send.</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2">
+            {loading ? (
+              <div className="py-6 flex items-center justify-center text-slate-500">
+                <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading processed mails...
+              </div>
+            ) : processedItems.length === 0 ? (
+              <div className="py-8 text-center text-slate-500 text-sm">No processed items yet.</div>
+            ) : (
+              <div className="space-y-3">
+                {processedItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 flex flex-col gap-3"
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{item.subject || "(No Subject)"}</p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">From: {item.from}</p>
+                      </div>
+                      <Badge className={`border ${statusColorMap[item.autoReplyStatus || "SKIPPED"] || statusColorMap.SKIPPED}`}>
+                        {item.autoReplyStatus || "SKIPPED"}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-slate-600 max-h-10 overflow-hidden">{toPlainText(item.content)}</p>
+                    <div className="text-xs text-slate-500">
+                      {item.autoReplyReason || "No extra reason available."}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Sheet open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
         <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
@@ -161,7 +273,7 @@ const AutoReplyInboxPage: React.FC = () => {
           </SheetHeader>
           <Separator className="my-4" />
           <div className="text-sm text-slate-700 leading-6 whitespace-pre-wrap">
-            {selected?.content?.replace(/<[^>]+>/g, " ") || "No content"}
+            {toPlainText(selected?.content)}
           </div>
         </SheetContent>
       </Sheet>

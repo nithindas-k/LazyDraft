@@ -20,7 +20,12 @@ import {
   Mail,
   Calendar,
   AlertTriangle,
+  Search,
+  SlidersHorizontal,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as ShadCalendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 const G_BLUE = "#4285F4";
 const G_RED = "#EA4335";
@@ -295,8 +300,8 @@ const AutoReplyInboxPage: React.FC = () => {
   const [sectionFilter, setSectionFilter] = useState<"ALL" | "PENDING" | "PROCESSED">("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "DRAFTED" | "SENT" | "BLOCKED" | "SKIPPED">("ALL");
   const [intentFilter, setIntentFilter] = useState<"ALL" | "Complaint" | "Inquiry" | "Follow-up" | "Spam-like">("ALL");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
 
   const loadSettings = async () => {
     try {
@@ -343,8 +348,8 @@ const AutoReplyInboxPage: React.FC = () => {
       const intentOk = intentFilter === "ALL" || item.intentTag === intentFilter;
 
       const created = new Date(item.createdAt).getTime();
-      const fromOk = !dateFrom || created >= new Date(`${dateFrom}T00:00:00`).getTime();
-      const toOk = !dateTo || created <= new Date(`${dateTo}T23:59:59`).getTime();
+      const fromOk = !dateFrom || created >= new Date(new Date(dateFrom).setHours(0, 0, 0, 0)).getTime();
+      const toOk = !dateTo || created <= new Date(new Date(dateTo).setHours(23, 59, 59, 999)).getTime();
 
       const sectionOk =
         sectionFilter === "ALL" ||
@@ -362,8 +367,8 @@ const AutoReplyInboxPage: React.FC = () => {
     setSectionFilter("ALL");
     setStatusFilter("ALL");
     setIntentFilter("ALL");
-    setDateFrom("");
-    setDateTo("");
+    setDateFrom(undefined);
+    setDateTo(undefined);
   };
 
   const openDetails = async (item: AutoReplyInboundItem) => {
@@ -424,13 +429,20 @@ const AutoReplyInboxPage: React.FC = () => {
 
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-3 text-slate-600">
+              <SlidersHorizontal className="w-4 h-4 text-blue-500" />
+              <p className="text-sm font-medium">Advanced Filters</p>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3">
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by sender, subject, content..."
-                className="xl:col-span-2"
-              />
+              <div className="relative xl:col-span-2">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by sender, subject, content..."
+                  className="pl-9"
+                />
+              </div>
               <Select value={sectionFilter} onValueChange={(v) => setSectionFilter(v as "ALL" | "PENDING" | "PROCESSED")}>
                 <SelectTrigger>
                   <SelectValue placeholder="Section" />
@@ -470,8 +482,28 @@ const AutoReplyInboxPage: React.FC = () => {
               </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="justify-start text-left font-normal">
+                    <Calendar className="w-4 h-4 mr-2 text-blue-500" />
+                    {dateFrom ? format(dateFrom, "PPP") : "From date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <ShadCalendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus />
+                </PopoverContent>
+              </Popover>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="justify-start text-left font-normal">
+                    <Calendar className="w-4 h-4 mr-2 text-blue-500" />
+                    {dateTo ? format(dateTo, "PPP") : "To date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <ShadCalendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus />
+                </PopoverContent>
+              </Popover>
             </div>
           </CardContent>
         </Card>

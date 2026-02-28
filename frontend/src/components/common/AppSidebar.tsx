@@ -87,7 +87,7 @@ function SidebarLogo({ collapsed }: { collapsed: boolean }) {
             <img
                 src="/LazyDraft.png"
                 alt="LazyDraft logo"
-                className="flex-shrink-0 w-10 h-10 object-contain rounded-xl"
+                className="flex-shrink-0 w-20 h-20 object-contain rounded-xl"
             />
             <AnimatePresence>
                 {!collapsed && (
@@ -352,7 +352,7 @@ function MobileTopBar() {
                     <img
                         src="/LazyDraft.png"
                         alt="LazyDraft logo"
-                        className="w-18 h-18 object-contain rounded-lg"
+                        className="w-12 h-12 object-contain rounded-lg"
                     />
                     <span className="font-bold text-slate-800 text-base">LazyDraft</span>
                 </div>

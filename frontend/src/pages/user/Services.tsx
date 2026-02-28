@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bot, CalendarClock, History, LineChart, Mail, ShieldCheck, Sparkles, Workflow } from "lucide-react";
+import { Bot, CalendarClock, History, LineChart, Mail, ShieldCheck, Sparkles, Workflow, Inbox } from "lucide-react";
 
 const services = [
   {
@@ -52,9 +52,9 @@ const services = [
     status: "Active",
   },
   {
-    title: "AI Auto Reply",
-    description: "Scan inbound Gmail messages and generate safe manual or automatic thread replies.",
-    icon: Bot,
+    title: "Auto Reply Inbox",
+    description: "Scan inbound Gmail messages and generate safe manual or automatic thread replies directly from your inbox.",
+    icon: Inbox,
     status: "Active",
   },
 ];

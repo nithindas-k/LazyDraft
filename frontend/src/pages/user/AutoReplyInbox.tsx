@@ -17,8 +17,6 @@ import {
   User,
   Mail,
   Calendar,
-  Send,
-  Clock3,
   AlertTriangle,
 } from "lucide-react";
 

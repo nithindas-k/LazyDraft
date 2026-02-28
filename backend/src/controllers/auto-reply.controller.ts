@@ -50,6 +50,22 @@ export class AutoReplyController {
         }
     };
 
+    getMailDetails = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const user = (req as any).user;
+            const userId = user?._id?.toString() || user?.id;
+            const mailId = String(req.params.mailId || "");
+            if (!userId || !mailId) {
+                res.status(400).json({ success: false, message: "Invalid request", data: null });
+                return;
+            }
+            const data = await this.autoReplyService.getMailDetails(userId, mailId);
+            res.status(200).json({ success: true, message: "Auto-reply mail details fetched", data });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error?.message || "Failed to fetch mail details", data: null });
+        }
+    };
+
     approveDraft = async (req: Request, res: Response): Promise<void> => {
         try {
             const user = (req as any).user;

@@ -49,6 +49,19 @@ export class AutoReplyService implements IAutoReplyService {
         return this.autoReplyRepository.findInboundForReview(userId, limit);
     }
 
+    async getMailDetails(userId: string, mailId: string) {
+        const inbound = await this.autoReplyRepository.findById(mailId);
+        if (!inbound || inbound.userId !== userId || inbound.direction !== "INBOUND") {
+            throw new Error("Inbound mail not found");
+        }
+        const autoReply = await this.autoReplyRepository.findLatestAutoReplyForInbound(
+            userId,
+            inbound.providerMessageId,
+            inbound.providerThreadId
+        );
+        return { inbound, autoReply };
+    }
+
     async approveDraft(userId: string, mailId: string): Promise<void> {
         const inbound = await this.autoReplyRepository.findById(mailId);
         if (!inbound || inbound.userId !== userId || inbound.direction !== "INBOUND") {

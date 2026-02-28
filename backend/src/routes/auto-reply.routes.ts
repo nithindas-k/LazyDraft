@@ -14,6 +14,7 @@ export class AutoReplyRoutes {
         this.router.get(`${base}/settings`, isAuthenticated, this.autoReplyController.getSettings);
         this.router.put(`${base}/settings`, isAuthenticated, this.autoReplyController.updateSettings);
         this.router.get(`${base}/inbound`, isAuthenticated, this.autoReplyController.listInbound);
+        this.router.get(`${base}/:mailId/details`, isAuthenticated, this.autoReplyController.getMailDetails);
         this.router.post(`${base}/:mailId/approve`, isAuthenticated, this.autoReplyController.approveDraft);
         this.router.post(`${base}/:mailId/reject`, isAuthenticated, this.autoReplyController.rejectDraft);
         this.router.post(`${base}/run`, isAuthenticated, this.autoReplyController.runNow);

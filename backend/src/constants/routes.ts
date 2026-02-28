@@ -12,6 +12,7 @@ export const API_ROUTES = {
             BASE: "/auto-reply",
             SETTINGS: "/settings",
             INBOUND: "/inbound",
+            DETAILS: "/:mailId/details",
             APPROVE: "/:mailId/approve",
             REJECT: "/:mailId/reject",
             RUN: "/run",

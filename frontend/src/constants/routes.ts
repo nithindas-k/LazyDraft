@@ -33,6 +33,7 @@ export const API_ENDPOINTS = {
         AUTO_REPLY: {
             SETTINGS: "/v1/mail/auto-reply/settings",
             INBOUND: "/v1/mail/auto-reply/inbound",
+            DETAILS: (mailId: string) => `/v1/mail/auto-reply/${mailId}/details`,
             APPROVE: (mailId: string) => `/v1/mail/auto-reply/${mailId}/approve`,
             REJECT: (mailId: string) => `/v1/mail/auto-reply/${mailId}/reject`,
             RUN: "/v1/mail/auto-reply/run",

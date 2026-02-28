@@ -69,6 +69,28 @@ export interface AutoReplyInboundItem {
     autoReplyReason?: string;
 }
 
+export interface AutoReplyMailDetails {
+    inbound: {
+        id: string;
+        from: string;
+        to: string;
+        subject: string;
+        content: string;
+        autoReplyStatus?: "SKIPPED" | "DRAFTED" | "SENT" | "BLOCKED";
+        autoReplyReason?: string;
+        createdAt: string;
+    };
+    autoReply: {
+        id: string;
+        from: string;
+        to: string;
+        subject: string;
+        content: string;
+        status: "SENT" | "FAILED" | "PENDING";
+        createdAt: string;
+    } | null;
+}
+
 export const MailService = {
     async parseMagicFill(
         text: string,
@@ -110,6 +132,10 @@ export const MailService = {
 
     async getAutoReplyInbound(limit = 50): Promise<{ success: boolean; data: AutoReplyInboundItem[] }> {
         return axiosInstance.get(`${API_ENDPOINTS.MAIL.AUTO_REPLY.INBOUND}?limit=${limit}`);
+    },
+
+    async getAutoReplyDetails(mailId: string): Promise<{ success: boolean; data: AutoReplyMailDetails }> {
+        return axiosInstance.get(API_ENDPOINTS.MAIL.AUTO_REPLY.DETAILS(mailId));
     },
 
     async approveAutoReply(mailId: string): Promise<{ success: boolean; message: string }> {

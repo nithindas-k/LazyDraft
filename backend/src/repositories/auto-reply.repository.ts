@@ -16,6 +16,10 @@ export class AutoReplyRepository implements IAutoReplyRepository {
         return this.mailRepository.findRecentAutoReplyByThread(userId, providerThreadId, since);
     }
 
+    async findLatestAutoReplyForInbound(userId: string, providerMessageId?: string, providerThreadId?: string): Promise<IMailEntity | null> {
+        return this.mailRepository.findLatestAutoReplyForInbound(userId, providerMessageId, providerThreadId);
+    }
+
     async create(mail: IMailEntity): Promise<IMailEntity> {
         return this.mailRepository.create(mail);
     }

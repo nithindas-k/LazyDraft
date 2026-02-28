@@ -85,25 +85,21 @@ function SidebarLogo({ collapsed }: { collapsed: boolean }) {
     return (
         <div className="flex items-center gap-2.5 px-4 h-16">
             <img
-                src="/LazyDraftBgremoved.png"
+                src="/LazyDraft.png"
                 alt="LazyDraft logo"
-                className="flex-shrink-0 w-8 h-8 object-contain"
+                className="flex-shrink-0 w-10 h-10 object-contain rounded-xl"
             />
             <AnimatePresence>
                 {!collapsed && (
-                    <motion.div
+                    <motion.span
                         initial={{ opacity: 0, width: 0 }}
                         animate={{ opacity: 1, width: "auto" }}
                         exit={{ opacity: 0, width: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="overflow-hidden whitespace-nowrap flex items-center"
+                        className="font-bold text-slate-800 text-xl tracking-tight overflow-hidden whitespace-nowrap"
                     >
-                        <img
-                            src="/LazyDraft.png"
-                            alt="LazyDraft"
-                            className="h-7 w-auto object-contain"
-                        />
-                    </motion.div>
+                        LazyDraft
+                    </motion.span>
                 )}
             </AnimatePresence>
         </div>
@@ -354,15 +350,11 @@ function MobileTopBar() {
                 </button>
                 <div className="flex items-center gap-2">
                     <img
-                        src="/LazyDraftBgremoved.png"
-                        alt="LazyDraft logo"
-                        className="w-6 h-6 object-contain"
-                    />
-                    <img
                         src="/LazyDraft.png"
-                        alt="LazyDraft"
-                        className="h-6 w-auto object-contain"
+                        alt="LazyDraft logo"
+                        className="w-8 h-8 object-contain rounded-lg"
                     />
+                    <span className="font-bold text-slate-800 text-base">LazyDraft</span>
                 </div>
             </div>
 

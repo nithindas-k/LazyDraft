@@ -87,7 +87,7 @@ function SidebarLogo({ collapsed }: { collapsed: boolean }) {
             <img
                 src="/LazyDraft.png"
                 alt="LazyDraft logo"
-                className="flex-shrink-0 w-20 h-20 object-contain rounded-xl"
+                className="flex-shrink-0 w-15 h-15 object-contain rounded-xl"
             />
             <AnimatePresence>
                 {!collapsed && (

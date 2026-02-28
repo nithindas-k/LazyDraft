@@ -8,6 +8,14 @@ export const API_ROUTES = {
         HISTORY: "/history",
         ANALYTICS: "/gmail/analytics",
         CHECK_REPLIES: "/check-replies",
+        AUTO_REPLY: {
+            BASE: "/auto-reply",
+            SETTINGS: "/settings",
+            INBOUND: "/inbound",
+            APPROVE: "/:mailId/approve",
+            REJECT: "/:mailId/reject",
+            RUN: "/run",
+        },
     },
     TEMPLATES: {
         BASE: "/templates",

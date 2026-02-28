@@ -51,6 +51,12 @@ const services = [
     icon: ShieldCheck,
     status: "Active",
   },
+  {
+    title: "AI Auto Reply",
+    description: "Scan inbound Gmail messages and generate safe manual or automatic thread replies.",
+    icon: Bot,
+    status: "Active",
+  },
 ];
 
 const ServicesPage: React.FC = () => {

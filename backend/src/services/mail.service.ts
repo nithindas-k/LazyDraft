@@ -46,6 +46,7 @@ export class MailService implements IMailService {
             savedMail = await this.mailRepository.create({
                 ...mailData,
                 status: "PENDING",
+                direction: "OUTBOUND",
                 createdAt: new Date(),
             });
         } catch (dbErr: any) {
@@ -203,6 +204,7 @@ export class MailService implements IMailService {
                 subject: item.subject,
                 content: item.content,
                 status: "PENDING",
+                direction: "OUTBOUND",
                 createdAt: new Date(),
             });
             try {

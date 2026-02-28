@@ -1,5 +1,5 @@
 import Groq from "groq-sdk";
-import { IAIService, IAIParsedMail } from "../interfaces/services/IAIService";
+import { IAIService, IAIParsedMail, IAutoReplyInput } from "../interfaces/services/IAIService";
 
 const WORD_COUNT_MAP: Record<string, number> = { short: 100, medium: 200, detailed: 400 };
 
@@ -128,6 +128,47 @@ ${body.substring(0, 1000)}
         } catch (error) {
             console.error("Subject Suggestion Error:", error);
             return [];
+        }
+    }
+
+    async generateAutoReply(input: IAutoReplyInput): Promise<string> {
+        try {
+            const tone = input.tone || "professional";
+            const policy = input.policy || "Keep it concise and ask one clarifying question if needed.";
+            const recipientName = input.recipientName?.trim();
+
+            const prompt = `You are an assistant that drafts safe business email replies.
+Return only valid HTML using <p>, <strong>, <br/> tags.
+Rules:
+1) Keep reply short and professional.
+2) Do not provide legal, medical, or financial commitments.
+3) If the incoming message is unclear, ask for one clarification.
+4) Do not promise actions that were not explicitly requested.
+5) End with a polite close.
+
+Tone: ${tone}
+Policy: ${policy}
+Sender: ${input.sender}
+Incoming Subject: ${input.subject}
+Incoming Body:
+${input.body}
+
+Return only HTML for the reply body.`;
+
+            const completion = await this.groq.chat.completions.create({
+                messages: [{ role: "user", content: prompt }],
+                model: this.model,
+                temperature: 0.3,
+            });
+
+            const content = completion.choices[0]?.message?.content?.trim() || "";
+            if (!content) {
+                return `<p>${recipientName ? `Hi ${recipientName},` : "Hello,"}</p><p>Thank you for your email. Could you please share a bit more detail so I can help you accurately?</p><p>Best regards,</p>`;
+            }
+            return content;
+        } catch (error) {
+            console.error("Auto reply generation failed:", error);
+            return "<p>Hello,</p><p>Thank you for your email. I will review your message and get back to you shortly.</p><p>Best regards,</p>";
         }
     }
 }

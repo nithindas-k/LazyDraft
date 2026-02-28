@@ -51,6 +51,24 @@ export interface RecurringMailPayload {
     isActive?: boolean;
 }
 
+export interface AutoReplySettingsPayload {
+    autoReplyEnabled: boolean;
+    autoReplyMode: "manual" | "auto";
+    autoReplySignature: string;
+    autoReplyCooldownMinutes: number;
+    gmailLastProcessedAt?: string;
+}
+
+export interface AutoReplyInboundItem {
+    id: string;
+    from: string;
+    subject: string;
+    content: string;
+    createdAt: string;
+    autoReplyStatus?: "SKIPPED" | "DRAFTED" | "SENT" | "BLOCKED";
+    autoReplyReason?: string;
+}
+
 export const MailService = {
     async parseMagicFill(
         text: string,
@@ -80,6 +98,30 @@ export const MailService = {
 
     async checkReplies(): Promise<void> {
         return axiosInstance.get(API_ENDPOINTS.MAIL.CHECK_REPLIES);
+    },
+
+    async getAutoReplySettings(): Promise<{ success: boolean; data: AutoReplySettingsPayload }> {
+        return axiosInstance.get(API_ENDPOINTS.MAIL.AUTO_REPLY.SETTINGS);
+    },
+
+    async updateAutoReplySettings(payload: Partial<AutoReplySettingsPayload>): Promise<{ success: boolean; data: AutoReplySettingsPayload }> {
+        return axiosInstance.put(API_ENDPOINTS.MAIL.AUTO_REPLY.SETTINGS, payload);
+    },
+
+    async getAutoReplyInbound(limit = 50): Promise<{ success: boolean; data: AutoReplyInboundItem[] }> {
+        return axiosInstance.get(`${API_ENDPOINTS.MAIL.AUTO_REPLY.INBOUND}?limit=${limit}`);
+    },
+
+    async approveAutoReply(mailId: string): Promise<{ success: boolean; message: string }> {
+        return axiosInstance.post(API_ENDPOINTS.MAIL.AUTO_REPLY.APPROVE(mailId));
+    },
+
+    async rejectAutoReply(mailId: string, reason?: string): Promise<{ success: boolean; message: string }> {
+        return axiosInstance.post(API_ENDPOINTS.MAIL.AUTO_REPLY.REJECT(mailId), { reason });
+    },
+
+    async runAutoReplyNow(): Promise<{ success: boolean; data: { processed: number } }> {
+        return axiosInstance.post(API_ENDPOINTS.MAIL.AUTO_REPLY.RUN);
     },
 
     // Templates

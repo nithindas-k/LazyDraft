@@ -9,6 +9,20 @@ export interface IGmailAnalytics {
     labels: { name: string; count: number }[];
 }
 
+export interface IGmailInboundMessage {
+    id: string;
+    threadId: string;
+    from: string;
+    to: string;
+    subject: string;
+    body: string;
+    date?: string;
+    inReplyTo?: string;
+    autoSubmitted?: string;
+    precedence?: string;
+    listId?: string;
+}
+
 export class GmailVendor implements IEmailVendor {
     private oauth2Client;
 
@@ -161,5 +175,171 @@ export class GmailVendor implements IEmailVendor {
             .map((l) => ({ name: l.name || "Label", count: l.messagesTotal || 0 }));
 
         return { totalInbox, unread, topSenders, dailyVolume, labels: userLabels };
+    }
+
+    private createGmailClient(refreshToken: string) {
+        this.oauth2Client.setCredentials({ refresh_token: refreshToken });
+        return google.gmail({ version: "v1", auth: this.oauth2Client });
+    }
+
+    private decodeBase64Url(value?: string): string {
+        if (!value) return "";
+        const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+        return Buffer.from(normalized, "base64").toString("utf-8");
+    }
+
+    private extractBody(payload?: any): string {
+        if (!payload) return "";
+        if (payload.body?.data) {
+            return this.decodeBase64Url(payload.body.data);
+        }
+        if (!Array.isArray(payload.parts)) return "";
+
+        const htmlPart = payload.parts.find((p: any) => p?.mimeType === "text/html" && p?.body?.data);
+        if (htmlPart?.body?.data) return this.decodeBase64Url(htmlPart.body.data);
+
+        const textPart = payload.parts.find((p: any) => p?.mimeType === "text/plain" && p?.body?.data);
+        if (textPart?.body?.data) return this.decodeBase64Url(textPart.body.data).replace(/\n/g, "<br/>");
+
+        for (const part of payload.parts) {
+            const nested = this.extractBody(part);
+            if (nested) return nested;
+        }
+        return "";
+    }
+
+    private findHeader(headers: Array<{ name?: string | null; value?: string | null }> | undefined, key: string): string {
+        if (!headers) return "";
+        return headers.find((h) => (h.name || "").toLowerCase() === key.toLowerCase())?.value || "";
+    }
+
+    async listRecentInboxMessages(refreshToken: string, after?: Date, maxResults = 20): Promise<IGmailInboundMessage[]> {
+        const gmail = this.createGmailClient(refreshToken);
+        const queryParts = ["in:inbox", "-from:me", "-category:promotions"];
+        if (after) {
+            const epochSeconds = Math.floor(after.getTime() / 1000);
+            queryParts.push(`after:${epochSeconds}`);
+        }
+        const q = queryParts.join(" ");
+
+        const listRes = await gmail.users.messages.list({
+            userId: "me",
+            q,
+            maxResults,
+        });
+
+        const ids = listRes.data.messages || [];
+        if (ids.length === 0) return [];
+
+        const details = await Promise.all(
+            ids.map((m) =>
+                gmail.users.messages.get({
+                    userId: "me",
+                    id: m.id!,
+                    format: "full",
+                })
+            )
+        );
+
+        return details
+            .map((item) => {
+                const data = item.data;
+                const headers = data.payload?.headers;
+                const from = this.findHeader(headers, "From");
+                const to = this.findHeader(headers, "To");
+                const subject = this.findHeader(headers, "Subject");
+                const inReplyTo = this.findHeader(headers, "In-Reply-To");
+                const date = this.findHeader(headers, "Date");
+                const autoSubmitted = this.findHeader(headers, "Auto-Submitted");
+                const precedence = this.findHeader(headers, "Precedence");
+                const listId = this.findHeader(headers, "List-Id");
+                const body = this.extractBody(data.payload);
+
+                if (!data.id || !data.threadId) return null;
+
+                return {
+                    id: data.id,
+                    threadId: data.threadId,
+                    from,
+                    to,
+                    subject,
+                    body,
+                    date,
+                    inReplyTo,
+                    autoSubmitted,
+                    precedence,
+                    listId,
+                } as IGmailInboundMessage;
+            })
+            .filter((m): m is IGmailInboundMessage => !!m);
+    }
+
+    async getMessageById(refreshToken: string, messageId: string): Promise<IGmailInboundMessage | null> {
+        const gmail = this.createGmailClient(refreshToken);
+        const result = await gmail.users.messages.get({
+            userId: "me",
+            id: messageId,
+            format: "full",
+        });
+        const data = result.data;
+        if (!data.id || !data.threadId) return null;
+        const headers = data.payload?.headers;
+        return {
+            id: data.id,
+            threadId: data.threadId,
+            from: this.findHeader(headers, "From"),
+            to: this.findHeader(headers, "To"),
+            subject: this.findHeader(headers, "Subject"),
+            body: this.extractBody(data.payload),
+            date: this.findHeader(headers, "Date"),
+            inReplyTo: this.findHeader(headers, "In-Reply-To"),
+            autoSubmitted: this.findHeader(headers, "Auto-Submitted"),
+            precedence: this.findHeader(headers, "Precedence"),
+            listId: this.findHeader(headers, "List-Id"),
+        };
+    }
+
+    async sendReplyInThread(params: {
+        refreshToken: string;
+        from: string;
+        to: string;
+        subject: string;
+        html: string;
+        threadId: string;
+        inReplyTo?: string;
+    }): Promise<boolean> {
+        try {
+            const gmail = this.createGmailClient(params.refreshToken);
+            const utf8Subject = `=?utf-8?B?${Buffer.from(params.subject).toString("base64")}?=`;
+            const messageParts = [
+                `From: ${params.from}`,
+                `To: ${params.to}`,
+                `Subject: ${utf8Subject}`,
+                "MIME-Version: 1.0",
+                "Content-Type: text/html; charset=utf-8",
+                "Content-Transfer-Encoding: quoted-printable",
+                "Auto-Submitted: auto-replied",
+                ...(params.inReplyTo ? [`In-Reply-To: ${params.inReplyTo}`, `References: ${params.inReplyTo}`] : []),
+                "",
+                params.html,
+            ];
+            const raw = Buffer.from(messageParts.join("\r\n"))
+                .toString("base64")
+                .replace(/\+/g, "-")
+                .replace(/\//g, "_")
+                .replace(/=+$/, "");
+
+            await gmail.users.messages.send({
+                userId: "me",
+                requestBody: {
+                    raw,
+                    threadId: params.threadId,
+                },
+            });
+            return true;
+        } catch (error) {
+            console.error("Failed to send threaded reply:", error);
+            return false;
+        }
     }
 }

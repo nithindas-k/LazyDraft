@@ -10,6 +10,10 @@ interface User {
     email: string;
     profilePic: string;
     isEmailVerified?: boolean;
+    autoReplyEnabled?: boolean;
+    autoReplyMode?: "manual" | "auto";
+    autoReplySignature?: string;
+    autoReplyCooldownMinutes?: number;
 }
 
 interface AuthContextType {

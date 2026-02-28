@@ -8,6 +8,11 @@ export interface IUser extends Document {
     refreshToken?: string;
     isEmailVerified: boolean;
     verificationToken?: string;
+    autoReplyEnabled?: boolean;
+    autoReplyMode?: "manual" | "auto";
+    autoReplySignature?: string;
+    autoReplyCooldownMinutes?: number;
+    gmailLastProcessedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -21,6 +26,11 @@ const UserSchema: Schema = new Schema(
         refreshToken: { type: String },
         isEmailVerified: { type: Boolean, default: false },
         verificationToken: { type: String },
+        autoReplyEnabled: { type: Boolean, default: false },
+        autoReplyMode: { type: String, enum: ["manual", "auto"], default: "manual" },
+        autoReplySignature: { type: String, default: "" },
+        autoReplyCooldownMinutes: { type: Number, default: 120 },
+        gmailLastProcessedAt: { type: Date },
     },
     { timestamps: true }
 );

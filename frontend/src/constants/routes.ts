@@ -10,6 +10,7 @@ export const APP_ROUTES = {
         DASHBOARD: "/user/dashboard",
         MAIL_SENDER: "/user/mail/sender",
         RECURRING_MAIL: "/user/mail/recurring",
+        AUTO_REPLY: "/user/mail/auto-reply",
         SERVICES: "/user/services",
         HISTORY: "/user/mail/history",
         SETTINGS: "/user/settings",
@@ -29,6 +30,13 @@ export const API_ENDPOINTS = {
         HISTORY: "/v1/mail/history",
         ANALYTICS: "/v1/mail/gmail/analytics",
         CHECK_REPLIES: "/v1/mail/check-replies",
+        AUTO_REPLY: {
+            SETTINGS: "/v1/mail/auto-reply/settings",
+            INBOUND: "/v1/mail/auto-reply/inbound",
+            APPROVE: (mailId: string) => `/v1/mail/auto-reply/${mailId}/approve`,
+            REJECT: (mailId: string) => `/v1/mail/auto-reply/${mailId}/reject`,
+            RUN: "/v1/mail/auto-reply/run",
+        },
     },
     TEMPLATES: {
         BASE: "/v1/templates",

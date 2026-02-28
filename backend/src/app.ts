@@ -10,6 +10,10 @@ import { MongoMailRepository } from "./repositories/mail.repository";
 import { MongoTemplateRepository } from "./repositories/template.repository";
 import { MongoRecurringMailRepository } from "./repositories/recurring-mail.repository";
 import { GmailVendor } from "./vendors/GmailVendor";
+import { AutoReplyRepository } from "./repositories/auto-reply.repository";
+import { AutoReplyService } from "./services/auto-reply.service";
+import { AutoReplyController } from "./controllers/auto-reply.controller";
+import { AutoReplyRoutes } from "./routes/auto-reply.routes";
 
 import passport from "./config/passport";
 import authRoutes from "./routes/auth.routes";
@@ -44,6 +48,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 const mailRepository = new MongoMailRepository();
+const autoReplyRepository = new AutoReplyRepository(mailRepository);
 const templateRepository = new MongoTemplateRepository();
 const recurringMailRepository = new MongoRecurringMailRepository();
 const aiService = new GroqAIService();
@@ -51,8 +56,12 @@ const emailVendor = new GmailVendor();
 const mailService = new MailService(mailRepository, aiService, emailVendor, templateRepository, recurringMailRepository);
 const mailController = new MailController(mailService);
 const mailRoutes = new MailRoutes(mailController);
+const autoReplyService = new AutoReplyService(autoReplyRepository, mailRepository, aiService, emailVendor);
+const autoReplyController = new AutoReplyController(autoReplyService);
+const autoReplyRoutes = new AutoReplyRoutes(autoReplyController);
 
 app.use("/api/v1", mailRoutes.router);
+app.use("/api/v1", autoReplyRoutes.router);
 app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {
@@ -74,6 +83,12 @@ setInterval(() => {
         console.error("Recurring email processing error:", err?.message || err);
     });
 }, 15 * 1000);
+
+setInterval(() => {
+    autoReplyService.runForEnabledUsers().catch((err) => {
+        console.error("Auto-reply processing error:", err?.message || err);
+    });
+}, 60 * 1000);
 
 app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

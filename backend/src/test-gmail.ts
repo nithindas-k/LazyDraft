@@ -20,11 +20,11 @@ const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
 async function test() {
     try {
-        // First test: check if we can access Gmail at all
+        // First test: check if we can access Gmail at all Aswin Variyath
         const profile = await gmail.users.getProfile({ userId: "me" });
         console.log("✅ Gmail API connected! Email:", profile.data.emailAddress);
 
-        // Second test: send a test email to yourself
+        // Second test: send a test email to yourself Aswin Variyath-----------------
         const message = [
             `From: ${profile.data.emailAddress}`,
             `To: ${profile.data.emailAddress}`,

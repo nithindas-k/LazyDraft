@@ -1,5 +1,13 @@
-# LazyDraft
+<div align="center">
+  <img src="./frontend/public/LazyDraftBgremoved.png" alt="LazyDraft Logo" width="250" />
+  <h1>LazyDraft</h1>
 
+
+  <p>
+    <a href="https://lazydraft.nithin.site/login" target="_blank">
+      <img src="https://img.shields.io/badge/Live%20Demo-Available-00a884?style=for-the-badge&logo=vercel" alt="Live Demo" />
+    </a>
+  </p>
 LazyDraft is a professional AI-powered email drafting and automation platform integrated with Gmail. It leverages advanced Large Language Models (LLMs) to streamline communication workflows, enabling users to generate, manage, and schedule emails with precision.
 
 ## Core Features

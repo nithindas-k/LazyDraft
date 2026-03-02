@@ -32,31 +32,31 @@ LazyDraft leverages advanced Large Language Models (LLMs) to streamline communic
 
 ## Core Features
 
-### 🤖 AI-Powered Drafting
+###  AI-Powered Drafting
 - Context-aware email generation using **Groq AI**
 - Dynamic tone adjustment — Professional, Casual, Urgent, Persuasive, and more
 - Precise length control — Short, Medium, or Long
 - Multi-language support for international communication
 - Smart subject line generation based on body content
 
-### 📬 Gmail Integration
+###  Gmail Integration
 - Secure authentication via **Google OAuth 2.0**
 - Direct Gmail API integration for drafting and sending
 - Real-time synchronization of drafted messages
 - Inbox monitoring for automated workflows
 
-### ⏰ Email Automation & Scheduling
+###  Email Automation & Scheduling
 - **Recurring Emails** — Set up daily, weekly, or monthly automated emails
 - **Scheduled Delivery** — Draft now, deliver at a precise future time
 - **AI Auto-Reply** — Intelligent automated responses based on user-defined rules
 
-### 📊 Analytics & Insights
+###  Analytics & Insights
 - Comprehensive dashboard with Gmail analytics
 - Email volume and pattern visualizations via Recharts
 - Top sender analysis and label-based filtering
 - Performance metrics for automated replies and sent messages
 
-### ✨ User Experience
+###  User Experience
 - High-performance, responsive UI built with **React 19 + Vite**
 - Smooth animations via **Framer Motion**
 - Dark / Light mode support
